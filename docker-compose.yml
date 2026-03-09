@@ -16,6 +16,8 @@ services:
       ENV: development
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_scaffold
       SECRET_KEY: app-scaffold-secret-change-in-prod
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GOOGLE_GENAI_USE_VERTEXAI: "false"
     ports:
       - "8000:8000"
     depends_on:

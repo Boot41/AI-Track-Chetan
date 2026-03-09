@@ -1,7 +1,7 @@
 [project]
 name = "app-scaffold"
 version = "0.1.0"
-description = "Full-stack scaffold — FastAPI + React + PostgreSQL"
+description = "Full-stack scaffold — FastAPI + React + PostgreSQL + Google ADK"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.111",
@@ -15,6 +15,7 @@ dependencies = [
   "python-multipart>=0.0.9",
   "alembic>=1.14",
   "loguru>=0.7",
+  "google-adk>=1.0",
 ]
 
 [project.optional-dependencies]
@@ -61,3 +62,9 @@ name = "DB does not import from services or API"
 type = "forbidden"
 source_modules = ["app.db"]
 forbidden_modules = ["app.services", "app.api"]
+
+[[tool.importlinter.contracts]]
+name = "Agent does not import from API or services"
+type = "forbidden"
+source_modules = ["app.agent"]
+forbidden_modules = ["app.api", "app.services"]
