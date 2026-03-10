@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from httpx import AsyncClient
 from fastapi import FastAPI
+from httpx import AsyncClient
 
 from app.api.deps import agent_service_client
 from app.schemas.contracts import AgentRequestEnvelope, PublicResponseContract
