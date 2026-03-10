@@ -311,6 +311,7 @@ For any completed change:
 - retrieval/scoring/output traceability is preserved
 - JSON output remains stable for frontend rendering
 - git changes are in a mergeable state
+- for every PR raised, the PR description includes a detailed summary of the change
 
 ## Change Heuristics for Future Agents
 
