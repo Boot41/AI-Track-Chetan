@@ -7,9 +7,9 @@ Create Date: 2026-03-10 00:00:00.000000
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 revision = "20260310_0001"
 down_revision = None
@@ -46,7 +46,12 @@ def upgrade() -> None:
     op.create_table(
         "chat_messages",
         sa.Column("id", sa.String(length=36), primary_key=True),
-        sa.Column("session_id", sa.String(length=36), sa.ForeignKey("chat_sessions.id"), nullable=False),
+        sa.Column(
+            "session_id",
+            sa.String(length=36),
+            sa.ForeignKey("chat_sessions.id"),
+            nullable=False,
+        ),
         sa.Column("role", sa.String(length=32), nullable=False),
         sa.Column("message_text", sa.Text(), nullable=False),
         sa.Column("query_type", sa.String(length=64), nullable=True),
@@ -59,8 +64,18 @@ def upgrade() -> None:
     op.create_table(
         "evaluation_results",
         sa.Column("id", sa.String(length=36), primary_key=True),
-        sa.Column("session_id", sa.String(length=36), sa.ForeignKey("chat_sessions.id"), nullable=False),
-        sa.Column("message_id", sa.String(length=36), sa.ForeignKey("chat_messages.id"), nullable=True),
+        sa.Column(
+            "session_id",
+            sa.String(length=36),
+            sa.ForeignKey("chat_sessions.id"),
+            nullable=False,
+        ),
+        sa.Column(
+            "message_id",
+            sa.String(length=36),
+            sa.ForeignKey("chat_messages.id"),
+            nullable=True,
+        ),
         sa.Column("query_type", sa.String(length=64), nullable=False),
         sa.Column("answer_text", sa.Text(), nullable=False),
         sa.Column("scorecard", sa.JSON(), nullable=False),
@@ -94,7 +109,12 @@ def upgrade() -> None:
     op.create_table(
         "document_sections",
         sa.Column("id", sa.String(length=36), primary_key=True),
-        sa.Column("document_id", sa.String(length=36), sa.ForeignKey("documents.id"), nullable=False),
+        sa.Column(
+            "document_id",
+            sa.String(length=36),
+            sa.ForeignKey("documents.id"),
+            nullable=False,
+        ),
         sa.Column("section_key", sa.String(length=128), nullable=False),
         sa.Column("title", sa.String(length=255), nullable=True),
         sa.Column("section_type", sa.String(length=64), nullable=False),
@@ -117,9 +137,17 @@ def upgrade() -> None:
     op.create_table(
         "document_facts",
         sa.Column("fact_id", sa.String(length=36), primary_key=True),
-        sa.Column("document_id", sa.String(length=36), sa.ForeignKey("documents.id"), nullable=False),
         sa.Column(
-            "section_id", sa.String(length=36), sa.ForeignKey("document_sections.id"), nullable=False
+            "document_id",
+            sa.String(length=36),
+            sa.ForeignKey("documents.id"),
+            nullable=False,
+        ),
+        sa.Column(
+            "section_id",
+            sa.String(length=36),
+            sa.ForeignKey("document_sections.id"),
+            nullable=False,
         ),
         sa.Column("subject", sa.String(length=255), nullable=False),
         sa.Column("predicate", sa.String(length=255), nullable=False),
@@ -130,15 +158,28 @@ def upgrade() -> None:
         sa.Column("extracted_by", sa.String(length=128), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
-    op.create_index("ix_document_facts_document_id", "document_facts", ["document_id"], unique=False)
+    op.create_index(
+        "ix_document_facts_document_id",
+        "document_facts",
+        ["document_id"],
+        unique=False,
+    )
     op.create_index("ix_document_facts_section_id", "document_facts", ["section_id"], unique=False)
 
     op.create_table(
         "document_risks",
         sa.Column("id", sa.String(length=36), primary_key=True),
-        sa.Column("document_id", sa.String(length=36), sa.ForeignKey("documents.id"), nullable=False),
         sa.Column(
-            "section_id", sa.String(length=36), sa.ForeignKey("document_sections.id"), nullable=False
+            "document_id",
+            sa.String(length=36),
+            sa.ForeignKey("documents.id"),
+            nullable=False,
+        ),
+        sa.Column(
+            "section_id",
+            sa.String(length=36),
+            sa.ForeignKey("document_sections.id"),
+            nullable=False,
         ),
         sa.Column("risk_type", sa.String(length=128), nullable=False),
         sa.Column("severity", sa.String(length=32), nullable=False),
@@ -148,7 +189,12 @@ def upgrade() -> None:
         sa.Column("status", sa.String(length=32), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
     )
-    op.create_index("ix_document_risks_document_id", "document_risks", ["document_id"], unique=False)
+    op.create_index(
+        "ix_document_risks_document_id",
+        "document_risks",
+        ["document_id"],
+        unique=False,
+    )
     op.create_index("ix_document_risks_section_id", "document_risks", ["section_id"], unique=False)
     op.create_index("ix_document_risks_risk_type", "document_risks", ["risk_type"], unique=False)
     op.create_index("ix_document_risks_severity", "document_risks", ["severity"], unique=False)

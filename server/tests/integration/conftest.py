@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
 
@@ -16,7 +17,7 @@ from sqlalchemy.ext.asyncio import (
 import app.db.models  # noqa: F401 — register all models
 from app.api.router import root_router
 from app.auth.passwords import hash_password
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.db.base import Base
 from app.db.models import User
 from app.middleware.error_handler import ErrorHandlerMiddleware
@@ -30,6 +31,18 @@ def _create_test_app() -> FastAPI:
     test_app.add_middleware(ErrorHandlerMiddleware)
     test_app.include_router(root_router)
     return test_app
+
+
+@pytest.fixture(scope="session", autouse=True)
+def test_settings() -> Settings:
+    os.environ.setdefault(
+        "DATABASE_URL",
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/app_scaffold_test",
+    )
+    os.environ.setdefault("SECRET_KEY", "test-secret")
+    os.environ.setdefault("ENV", "test")
+    get_settings.cache_clear()
+    return get_settings()
 
 
 @pytest.fixture

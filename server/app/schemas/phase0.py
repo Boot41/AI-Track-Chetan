@@ -146,7 +146,7 @@ class EvaluationScorecard(BaseModel):
     focus_area: ComparisonAxis | None = None
 
     @model_validator(mode="after")
-    def validate_shape(self) -> "EvaluationScorecard":
+    def validate_shape(self) -> EvaluationScorecard:
         if self.scorecard_type == ScorecardType.COMPARISON and self.comparison is None:
             raise ValueError("comparison scorecard payload is required for comparison scorecards")
         if self.scorecard_type != ScorecardType.COMPARISON and self.comparison is not None:
@@ -199,7 +199,7 @@ class ComparisonState(BaseModel):
     active_option: str | None = None
 
     @model_validator(mode="after")
-    def validate_active_option(self) -> "ComparisonState":
+    def validate_active_option(self) -> ComparisonState:
         if self.active_option is not None and self.active_option not in {
             self.option_a.option_id,
             self.option_b.option_id,
@@ -224,7 +224,7 @@ class SessionState(BaseModel):
     active_option: str | None = None
 
     @model_validator(mode="after")
-    def validate_comparison_state(self) -> "SessionState":
+    def validate_comparison_state(self) -> SessionState:
         if self.active_option and self.comparison_state is None:
             raise ValueError("active_option requires comparison_state")
         return self
@@ -256,13 +256,8 @@ class RecommendationWeights(BaseModel):
     catalog_fit_weight: float = 0.20
 
     @model_validator(mode="after")
-    def validate_total(self) -> "RecommendationWeights":
-        total = (
-            self.narrative_weight
-            + self.roi_weight
-            + self.risk_weight
-            + self.catalog_fit_weight
-        )
+    def validate_total(self) -> RecommendationWeights:
+        total = self.narrative_weight + self.roi_weight + self.risk_weight + self.catalog_fit_weight
         if abs(total - 1.0) > 1e-9:
             raise ValueError("recommendation weights must sum to 1.0")
         return self

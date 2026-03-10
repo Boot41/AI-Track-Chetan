@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from app.schemas.phase0 import AgentTarget, QueryClassification, QueryType
 
-
 ROUTING_SPEC: dict[QueryType, QueryClassification] = {
     QueryType.ORIGINAL_EVAL: QueryClassification(
         query_type=QueryType.ORIGINAL_EVAL,
@@ -87,4 +86,3 @@ ROUTING_SPEC: dict[QueryType, QueryClassification] = {
         requires_recomputation=False,
     ),
 }
-

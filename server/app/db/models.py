@@ -29,7 +29,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    chat_sessions: Mapped[list["ChatSession"]] = relationship(back_populates="user")
+    chat_sessions: Mapped[list[ChatSession]] = relationship(back_populates="user")
 
 
 class ChatSession(Base):
@@ -48,8 +48,8 @@ class ChatSession(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="chat_sessions")
-    messages: Mapped[list["ChatMessage"]] = relationship(back_populates="session")
-    evaluation_results: Mapped[list["EvaluationResult"]] = relationship(back_populates="session")
+    messages: Mapped[list[ChatMessage]] = relationship(back_populates="session")
+    evaluation_results: Mapped[list[EvaluationResult]] = relationship(back_populates="session")
 
 
 class ChatMessage(Base):
@@ -64,7 +64,7 @@ class ChatMessage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     session: Mapped[ChatSession] = relationship(back_populates="messages")
-    evaluation_results: Mapped[list["EvaluationResult"]] = relationship(back_populates="message")
+    evaluation_results: Mapped[list[EvaluationResult]] = relationship(back_populates="message")
 
 
 class EvaluationResult(Base):
@@ -102,9 +102,9 @@ class Document(Base):
         onupdate=func.now(),
     )
 
-    sections: Mapped[list["DocumentSection"]] = relationship(back_populates="document")
-    facts: Mapped[list["DocumentFact"]] = relationship(back_populates="document")
-    risks: Mapped[list["DocumentRisk"]] = relationship(back_populates="document")
+    sections: Mapped[list[DocumentSection]] = relationship(back_populates="document")
+    facts: Mapped[list[DocumentFact]] = relationship(back_populates="document")
+    risks: Mapped[list[DocumentRisk]] = relationship(back_populates="document")
 
 
 class DocumentSection(Base):
@@ -122,8 +122,8 @@ class DocumentSection(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     document: Mapped[Document] = relationship(back_populates="sections")
-    facts: Mapped[list["DocumentFact"]] = relationship(back_populates="section")
-    risks: Mapped[list["DocumentRisk"]] = relationship(back_populates="section")
+    facts: Mapped[list[DocumentFact]] = relationship(back_populates="section")
+    risks: Mapped[list[DocumentRisk]] = relationship(back_populates="section")
 
 
 class DocumentFact(Base):
