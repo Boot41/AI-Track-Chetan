@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
+import os
+from collections.abc import AsyncGenerator, Generator
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -16,7 +17,7 @@ from sqlalchemy.ext.asyncio import (
 import app.db.models  # noqa: F401 — register all models
 from app.api.router import root_router
 from app.auth.passwords import hash_password
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.db.base import Base
 from app.db.models import User
 from app.middleware.error_handler import ErrorHandlerMiddleware
@@ -30,6 +31,28 @@ def _create_test_app() -> FastAPI:
     test_app.add_middleware(ErrorHandlerMiddleware)
     test_app.include_router(root_router)
     return test_app
+
+
+@pytest.fixture(scope="session", autouse=True)
+def test_settings() -> Generator[Settings, None, None]:
+    original_env = {
+        "DATABASE_URL": os.environ.get("DATABASE_URL"),
+        "SECRET_KEY": os.environ.get("SECRET_KEY"),
+        "ENV": os.environ.get("ENV"),
+    }
+    os.environ["DATABASE_URL"] = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/app_scaffold_test"
+    )
+    os.environ["SECRET_KEY"] = "test-secret"
+    os.environ["ENV"] = "test"
+    get_settings.cache_clear()
+    yield get_settings()
+    for key, value in original_env.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
+    get_settings.cache_clear()
 
 
 @pytest.fixture

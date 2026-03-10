@@ -1,0 +1,37 @@
+{
+  "fixture_id": "original-series-neon-shore",
+  "query": "Should we greenlight Neon Shore as an original series?",
+  "request_context": {
+    "content_id": "pitch-neon-shore",
+    "content_type": "original_series"
+  },
+  "expected_classification": {
+    "query_type": "original_eval",
+    "target_agents": [
+      "narrative_analysis",
+      "roi_prediction",
+      "risk_contract_analysis",
+      "catalog_fit",
+      "recommendation_engine"
+    ],
+    "reuse_cached_outputs": false,
+    "requires_recomputation": true
+  },
+  "expected_response_shape": {
+    "answer": "string",
+    "scorecard_type": "evaluation",
+    "required_scorecard_fields": [
+      "title",
+      "recommendation",
+      "projected_completion_rate",
+      "estimated_roi",
+      "catalog_fit_score",
+      "risk_flags"
+    ],
+    "meta_fields": [
+      "warnings",
+      "confidence",
+      "review_required"
+    ]
+  }
+}

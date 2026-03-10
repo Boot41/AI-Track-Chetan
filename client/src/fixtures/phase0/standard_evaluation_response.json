@@ -1,0 +1,54 @@
+{
+  "answer": "Neon Shore is a conditional greenlight. The YA thriller angle fits a known catalog gap, but projected ROI depends on holding the production budget near the current plan.",
+  "scorecard": {
+    "scorecard_type": "evaluation",
+    "query_type": "original_eval",
+    "title": "Neon Shore Original Series Evaluation",
+    "recommendation": "CONDITIONAL",
+    "narrative_score": 74.0,
+    "projected_completion_rate": 0.63,
+    "estimated_roi": 1.18,
+    "catalog_fit_score": 81.0,
+    "risk_level": "MEDIUM",
+    "risk_flags": [
+      {
+        "code": "budget_sensitivity",
+        "severity": "MEDIUM",
+        "summary": "ROI falls below target if production costs move more than 12% above plan."
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-neon-scene-12",
+      "source_type": "document_section",
+      "document_id": "doc-neon-shore-script",
+      "section_id": "scene-12",
+      "snippet": "Episode one lands the central conspiracy in the first nine pages and keeps the protagonist on-screen for nearly every beat.",
+      "source_reference": "Neon Shore Pilot Script, Scene 12",
+      "retrieval_method": "hybrid",
+      "confidence_score": 0.92,
+      "used_by_agent": "narrative_analysis",
+      "claim_it_supports": "The pilot sustains pace and protagonist focus early."
+    },
+    {
+      "evidence_id": "ev-roi-benchmark-ya-thriller",
+      "source_type": "structured_metric",
+      "document_id": null,
+      "section_id": null,
+      "snippet": "Comparable YA thrillers with sub-$18M first-season budgets produced a median 1.15 ROI in 18 months.",
+      "source_reference": "Historical originals benchmark Q4 2025",
+      "retrieval_method": "sql",
+      "confidence_score": 0.88,
+      "used_by_agent": "roi_prediction",
+      "claim_it_supports": "Current budget range can clear the ROI threshold."
+    }
+  ],
+  "meta": {
+    "warnings": [
+      "Budget sensitivity remains material."
+    ],
+    "confidence": 0.79,
+    "review_required": false
+  }
+}

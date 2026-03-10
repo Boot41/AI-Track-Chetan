@@ -1,0 +1,36 @@
+{
+  "fixture_id": "acquisition-midnight-courts",
+  "query": "Should we acquire the Midnight Courts library for Southeast Asia?",
+  "request_context": {
+    "content_id": "catalog-midnight-courts",
+    "content_type": "catalog_acquisition"
+  },
+  "expected_classification": {
+    "query_type": "acquisition_eval",
+    "target_agents": [
+      "risk_contract_analysis",
+      "catalog_fit",
+      "roi_prediction",
+      "recommendation_engine"
+    ],
+    "reuse_cached_outputs": false,
+    "requires_recomputation": true
+  },
+  "expected_response_shape": {
+    "answer": "string",
+    "scorecard_type": "evaluation",
+    "required_scorecard_fields": [
+      "title",
+      "recommendation",
+      "estimated_roi",
+      "catalog_fit_score",
+      "risk_level",
+      "risk_flags"
+    ],
+    "meta_fields": [
+      "warnings",
+      "confidence",
+      "review_required"
+    ]
+  }
+}
