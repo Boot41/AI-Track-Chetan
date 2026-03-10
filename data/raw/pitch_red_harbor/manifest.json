@@ -1,0 +1,128 @@
+{
+  "content_id": "pitch_red_harbor",
+  "title": "Red Harbor Collection",
+  "content_type": "Catalog Acquisition",
+  "primary_genre": "Mixed (Action, Indie, Documentary)",
+  "target_regions": ["Worldwide (Excl. China)", "Europe", "Asia", "Americas"],
+  "target_audience": "Mixed (Gen Z, Millennials, Gen X)",
+  "document_set_version": "1.0",
+  "documents": [
+    {
+      "filename": "01_catalog_overview.md",
+      "doc_type": "Executive Summary",
+      "title": "Catalog Overview: Red Harbor Collection",
+      "purpose": "High-level mix and strategic value.",
+      "primary_use": "catalog_fit",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["Red Harbor Collection", "52 titles"],
+      "expected_risks": ["Localization costs"],
+      "expected_signals": ["volume at scale", "global diversity"]
+    },
+    {
+      "filename": "02_catalog_contents.md",
+      "doc_type": "Content Inventory",
+      "title": "Catalog Contents: Red Harbor Collection",
+      "purpose": "Content-level analysis and overlap check.",
+      "primary_use": "catalog_fit",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["Neon City Nights", "Echoes of Paris", "Mumbai Underground"],
+      "expected_risks": ["Older content dated values"],
+      "expected_signals": ["award winners", "franchise potential"]
+    },
+    {
+      "filename": "03_rights_term_sheet.md",
+      "doc_type": "Legal Summary",
+      "title": "Rights Term Sheet: Red Harbor Collection",
+      "purpose": "Key terms of the proposed acquisition.",
+      "primary_use": "risk",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["RHD", "Initial Term"],
+      "expected_risks": ["Exclusivity overlap 9.2", "Sub-licensing limits 5.1"],
+      "expected_signals": ["non-exclusive streaming rights", "worldwide excluding China"]
+    },
+    {
+      "filename": "04_licensing_contract.md",
+      "doc_type": "Legal Agreement",
+      "title": "Licensing Contract: Red Harbor Collection",
+      "purpose": "Final binding terms and conditions.",
+      "primary_use": "risk",
+      "sectioning_hint": "contract_clause",
+      "expected_entities": ["Red Harbor Distribution, Ltd.", "RHD"],
+      "expected_risks": ["Clause 9.2 overlap", "Clause 5.1 sub-licensing", "Clause 14.5 conditional"],
+      "expected_signals": ["territory restrictions", "dubbing/subtitling quality"]
+    },
+    {
+      "filename": "05_catalog_performance_summary.md",
+      "doc_type": "Historical Data",
+      "title": "Catalog Performance Summary: Red Harbor Collection",
+      "purpose": "ROI prediction and demand analysis.",
+      "primary_use": "roi",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["100M views", "65% completion rate"],
+      "expected_risks": ["ROI downside for niche titles"],
+      "expected_signals": ["strong regional appeal", "high performance hits"]
+    },
+    {
+      "filename": "06_focus_group_report.md",
+      "doc_type": "Audience Research",
+      "title": "Focus Group Report: Red Harbor Collection",
+      "purpose": "Regional sentiment and retention.",
+      "primary_use": "roi",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["Gen Z", "Millennials", "Gen X"],
+      "expected_risks": ["Catalog noise", "Dated production values"],
+      "expected_signals": ["high interest in international", "must-watch breakout hits"]
+    },
+    {
+      "filename": "07_strategic_fit_memo.md",
+      "doc_type": "Strategic Analysis",
+      "title": "Strategic Fit Memo: Red Harbor Collection",
+      "purpose": "Alignment with platform goals.",
+      "primary_use": "catalog_fit",
+      "sectioning_hint": "memo_section",
+      "expected_entities": ["Churn-heavy demographics", "Genre gaps"],
+      "expected_risks": ["Competitor overlap"],
+      "expected_signals": ["underserved audience", "strategic timing"]
+    },
+    {
+      "filename": "08_localization_note.md",
+      "doc_type": "Global Strategy",
+      "title": "Localization Note: Red Harbor Collection",
+      "purpose": "Regional demand and localization cost analysis.",
+      "primary_use": "catalog_fit",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["Europe", "Asia", "Americas", "MENA/SEA"],
+      "expected_risks": ["High localization costs"],
+      "expected_signals": ["comprehensive global rollout", "cultural/regulatory review"]
+    },
+    {
+      "filename": "09_comp_titles_notes.md",
+      "doc_type": "Market Analysis",
+      "title": "Comparable Titles Notes: Red Harbor Collection",
+      "purpose": "Performance benchmarking and overlap check.",
+      "primary_use": "comparison_support",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["Global Indie Library", "Action World 50"],
+      "expected_risks": ["Localization quality dependency"],
+      "expected_signals": ["high binging score", "fresher feel vs comps"]
+    },
+    {
+      "filename": "10_regulatory_risk_note.md",
+      "doc_type": "Legal/Reg. Risk",
+      "title": "Regulatory Risk Note: Red Harbor Collection",
+      "purpose": "Detailed risk analysis and mitigation strategies.",
+      "primary_use": "risk",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["MENA", "SEA", "China"],
+      "expected_risks": ["Censorship", "Regulatory uncertainty"],
+      "expected_signals": ["phased rollout mitigation", "legal audit requirement"]
+    }
+  ],
+  "primary_narrative_sources": ["01_catalog_overview.md", "02_catalog_contents.md"],
+  "primary_risk_sources": ["03_rights_term_sheet.md", "04_licensing_contract.md", "10_regulatory_risk_note.md"],
+  "primary_roi_sources": ["05_catalog_performance_summary.md", "06_focus_group_report.md"],
+  "primary_catalog_fit_sources": ["07_strategic_fit_memo.md", "08_localization_note.md"],
+  "review_points": ["Clause 9.2 exclusivity overlap", "Clause 5.1 sub-licensing limits", "Regional cultural compliance"],
+  "known_intentional_contradictions": [],
+  "ingestion_notes": "Handle high volume of titles. Focus on extracting specific title entities and their associated regional values."
+}

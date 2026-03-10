@@ -1,0 +1,128 @@
+{
+  "content_id": "pitch_shadow_protocol",
+  "title": "Shadow Protocol",
+  "content_type": "Original Series",
+  "primary_genre": "Cyber-Espionage / Noir Thriller",
+  "target_regions": ["US", "UK", "Germany", "France", "Japan", "South Korea"],
+  "target_audience": "Adults 18-35 (Tech-savvy, thriller fans)",
+  "document_set_version": "1.0",
+  "documents": [
+    {
+      "filename": "01_pitch_overview.md",
+      "doc_type": "Executive Summary",
+      "title": "Pitch Overview: Shadow Protocol",
+      "purpose": "High-level concept and strategic value.",
+      "primary_use": "narrative",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["Elara Vance", "Protocol 9", "The Consortium"],
+      "expected_risks": ["High production cost"],
+      "expected_signals": ["prestige cyber-noir", "global appeal"]
+    },
+    {
+      "filename": "02_pilot_script.md",
+      "doc_type": "Creative Script",
+      "title": "Pilot Script: Shadow Protocol",
+      "purpose": "Detailed narrative execution and pacing.",
+      "primary_use": "narrative",
+      "sectioning_hint": "script_scene",
+      "expected_entities": ["Elara Vance", "Arthur", "Kai"],
+      "expected_risks": ["Technical jargon confusion"],
+      "expected_signals": ["high-stakes pacing", "morally grey protagonist"]
+    },
+    {
+      "filename": "03_show_bible.md",
+      "doc_type": "Series Bible",
+      "title": "Show Bible: Shadow Protocol",
+      "purpose": "Long-term world rules and franchise potential.",
+      "primary_use": "narrative",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["Elara Vance", "Kai", "Arthur"],
+      "expected_risks": ["Franchise control limitations"],
+      "expected_signals": ["privacy vs. security", "analog key mystery"]
+    },
+    {
+      "filename": "04_pitch_deck.md",
+      "doc_type": "Visual/Marketing Deck",
+      "title": "Pitch Deck: Shadow Protocol",
+      "purpose": "Market positioning and visual tone.",
+      "primary_use": "comparison_support",
+      "sectioning_hint": "slide",
+      "expected_entities": ["Gen Z", "Millennials"],
+      "expected_risks": ["High budget requirements"],
+      "expected_signals": ["prestige drama", "global opportunity"]
+    },
+    {
+      "filename": "05_focus_group_report.md",
+      "doc_type": "Audience Research",
+      "title": "Focus Group Report: Shadow Protocol",
+      "purpose": "Early sentiment and drop-off risks.",
+      "primary_use": "roi",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["Gen Z", "Millennials", "Gen X"],
+      "expected_risks": ["Technical jargon drop-off"],
+      "expected_signals": ["high retention potential", "compelling lead"]
+    },
+    {
+      "filename": "06_budget_assumptions.md",
+      "doc_type": "Financial Plan",
+      "title": "Budget Assumptions: Shadow Protocol",
+      "purpose": "Production and marketing cost estimates.",
+      "primary_use": "roi",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["VFX", "Marketing", "Localization"],
+      "expected_risks": ["Breakeven risk"],
+      "expected_signals": ["prestige ROI", "high-value demographic"]
+    },
+    {
+      "filename": "07_localization_plan.md",
+      "doc_type": "Global Strategy",
+      "title": "Localization Plan: Shadow Protocol",
+      "purpose": "Regional adaptation and dubbing needs.",
+      "primary_use": "catalog_fit",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["MENA", "SEA", "Tier 1"],
+      "expected_risks": ["Censorship risk"],
+      "expected_signals": ["global rollout", "cultural adaptation"]
+    },
+    {
+      "filename": "08_comp_titles_notes.md",
+      "doc_type": "Market Analysis",
+      "title": "Comparable Titles Notes: Shadow Protocol",
+      "purpose": "Comparison with existing successful titles.",
+      "primary_use": "comparison_support",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["The Grid", "Digital Ghosts"],
+      "expected_risks": ["Cannibalization risk"],
+      "expected_signals": ["high completion rate", "global appeal"]
+    },
+    {
+      "filename": "09_rights_term_sheet.md",
+      "doc_type": "Legal Summary",
+      "title": "Rights Term Sheet: Shadow Protocol",
+      "purpose": "Key terms of the proposed rights deal.",
+      "primary_use": "risk",
+      "sectioning_hint": "report_section",
+      "expected_entities": ["Shadow Productions", "GCRM"],
+      "expected_risks": ["Matching rights blocker"],
+      "expected_signals": ["worldwide exclusivity", "derivative rights"]
+    },
+    {
+      "filename": "10_licensing_contract.md",
+      "doc_type": "Legal Agreement",
+      "title": "Licensing Contract: Shadow Protocol",
+      "purpose": "Final binding terms and conditions.",
+      "primary_use": "risk",
+      "sectioning_hint": "contract_clause",
+      "expected_entities": ["GCRM", "Initial Term"],
+      "expected_risks": ["Clause 14.3 risk", "Clause 14.5 risk"],
+      "expected_signals": ["exclusive streaming rights", "conditional approval"]
+    }
+  ],
+  "primary_narrative_sources": ["01_pitch_overview.md", "02_pilot_script.md", "03_show_bible.md"],
+  "primary_risk_sources": ["09_rights_term_sheet.md", "10_licensing_contract.md"],
+  "primary_roi_sources": ["05_focus_group_report.md", "06_budget_assumptions.md"],
+  "primary_catalog_fit_sources": ["07_localization_plan.md", "08_comp_titles_notes.md"],
+  "review_points": ["Matching rights in 14.3", "Technical jargon in pilot", "Cultural review for MENA/SEA"],
+  "known_intentional_contradictions": [],
+  "ingestion_notes": "Prioritize scene-level sectioning for the script and clause-level for the contract."
+}
