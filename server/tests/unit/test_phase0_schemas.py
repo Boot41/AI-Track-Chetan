@@ -116,6 +116,52 @@ def test_comparison_state_requires_valid_active_option() -> None:
     assert state.comparison_state.active_option == "option-b"
 
 
+def test_comparison_scorecard_winner_must_match_listed_option() -> None:
+    option_a = ComparisonOption(
+        option_id="option-a",
+        label="Option A",
+        query_type=QueryType.ORIGINAL_EVAL,
+    )
+    option_b = ComparisonOption(
+        option_id="option-b",
+        label="Option B",
+        query_type=QueryType.ACQUISITION_EVAL,
+    )
+
+    with pytest.raises(ValidationError):
+        ComparisonScorecard(
+            options=[option_a, option_b],
+            winning_option_id="option-c",
+            comparison_axes=[ComparisonAxis.ROI],
+            summary="Invalid winner.",
+        )
+
+
+def test_session_state_requires_consistent_active_option() -> None:
+    option_a = ComparisonOption(
+        option_id="option-a",
+        label="Option A",
+        query_type=QueryType.ORIGINAL_EVAL,
+    )
+    option_b = ComparisonOption(
+        option_id="option-b",
+        label="Option B",
+        query_type=QueryType.ACQUISITION_EVAL,
+    )
+
+    with pytest.raises(ValidationError):
+        SessionState(
+            query_type=QueryType.COMPARISON,
+            comparison_state={
+                "option_a": option_a.model_dump(),
+                "option_b": option_b.model_dump(),
+                "comparison_axes": ["roi"],
+                "active_option": "option-a",
+            },
+            active_option="option-b",
+        )
+
+
 def test_followup_scorecard_requires_focus_area() -> None:
     with pytest.raises(ValidationError):
         EvaluationScorecard(

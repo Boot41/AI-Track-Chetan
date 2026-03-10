@@ -128,6 +128,15 @@ class ComparisonScorecard(BaseModel):
             raise ValueError("comparison_axes must not contain duplicates")
         return value
 
+    @model_validator(mode="after")
+    def validate_winner(self) -> ComparisonScorecard:
+        if self.winning_option_id is None:
+            return self
+        option_ids = {option.option_id for option in self.options}
+        if self.winning_option_id not in option_ids:
+            raise ValueError("winning_option_id must match one of the comparison options")
+        return self
+
 
 class EvaluationScorecard(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -227,6 +236,13 @@ class SessionState(BaseModel):
     def validate_comparison_state(self) -> SessionState:
         if self.active_option and self.comparison_state is None:
             raise ValueError("active_option requires comparison_state")
+        if (
+            self.active_option is not None
+            and self.comparison_state is not None
+            and self.comparison_state.active_option is not None
+            and self.active_option != self.comparison_state.active_option
+        ):
+            raise ValueError("active_option must match comparison_state.active_option")
         return self
 
 

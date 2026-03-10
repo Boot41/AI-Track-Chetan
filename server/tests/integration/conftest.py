@@ -34,15 +34,23 @@ def _create_test_app() -> FastAPI:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def test_settings() -> Settings:
-    os.environ.setdefault(
-        "DATABASE_URL",
-        "postgresql+asyncpg://postgres:postgres@localhost:5432/app_scaffold_test",
-    )
-    os.environ.setdefault("SECRET_KEY", "test-secret")
-    os.environ.setdefault("ENV", "test")
+def test_settings() -> AsyncGenerator[Settings, None]:
+    original_env = {
+        "DATABASE_URL": os.environ.get("DATABASE_URL"),
+        "SECRET_KEY": os.environ.get("SECRET_KEY"),
+        "ENV": os.environ.get("ENV"),
+    }
+    os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:postgres@localhost:5432/app_scaffold_test"
+    os.environ["SECRET_KEY"] = "test-secret"
+    os.environ["ENV"] = "test"
     get_settings.cache_clear()
-    return get_settings()
+    yield get_settings()
+    for key, value in original_env.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
+    get_settings.cache_clear()
 
 
 @pytest.fixture
