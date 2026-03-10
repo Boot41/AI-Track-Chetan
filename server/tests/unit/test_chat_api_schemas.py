@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import ValidationError
 
 from app.schemas.chat_api import ChatMessageCreateRequest, SessionCreateRequest
-from app.schemas.contracts import QueryType, ScorecardType
+from app.schemas.contracts import AgentRequestEnvelope, QueryType, ScorecardType
 from app.services.agent_proxy import StubAgentServiceClient
 
 
@@ -28,11 +28,13 @@ def test_chat_message_request_requires_query_type() -> None:
 async def test_stub_agent_client_adapts_comparison_fixture() -> None:
     client = StubAgentServiceClient()
     response = await client.evaluate(
-        {
+        AgentRequestEnvelope.model_validate(
+            {
             "message": "Compare both options",
             "context": {"user_id": 1, "session_id": "sess-1"},
             "session_state": {"query_type": QueryType.COMPARISON.value},
-        }
+            }
+        )
     )
 
     assert response.scorecard.scorecard_type == ScorecardType.COMPARISON

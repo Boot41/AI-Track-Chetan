@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import pytest
 from httpx import AsyncClient
+from fastapi import FastAPI
 
 from app.api.deps import agent_service_client
-from app.schemas.contracts import PublicResponseContract
+from app.schemas.contracts import AgentRequestEnvelope, PublicResponseContract
 from app.services.agent_proxy import StubAgentServiceClient
 
 
@@ -145,7 +146,7 @@ async def test_invalid_chat_request_is_rejected(
 async def test_proxy_failures_return_bad_gateway(
     client: AsyncClient,
     auth_headers: dict[str, str],
-    test_app,
+    test_app: FastAPI,
 ) -> None:
     class FailingProxy:
         async def evaluate(self, envelope):  # type: ignore[no-untyped-def]
@@ -172,10 +173,12 @@ async def test_proxy_failures_return_bad_gateway(
 @pytest.mark.asyncio
 async def test_stub_proxy_dependency_returns_phase0_contract() -> None:
     response = await StubAgentServiceClient().evaluate(
-        {
+        AgentRequestEnvelope.model_validate(
+            {
             "message": "Should we buy this?",
             "context": {"user_id": 1, "session_id": "sess-1"},
             "session_state": {"query_type": "acquisition_eval"},
-        }
+            }
+        )
     )
     assert response.scorecard.query_type.value == "acquisition_eval"

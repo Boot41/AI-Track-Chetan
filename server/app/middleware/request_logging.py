@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from uuid import uuid4
 import time
+from uuid import uuid4
 
 from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
