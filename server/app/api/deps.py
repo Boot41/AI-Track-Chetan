@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.db.session import get_db_session
+from app.services.agent_proxy import AgentServiceClient, StubAgentServiceClient
 
 
 async def db_session(session: AsyncSession = Depends(get_db_session)) -> AsyncSession:
@@ -13,3 +14,7 @@ async def db_session(session: AsyncSession = Depends(get_db_session)) -> AsyncSe
 
 def settings(s: Settings = Depends(get_settings)) -> Settings:
     return s
+
+
+def agent_service_client() -> AgentServiceClient:
+    return StubAgentServiceClient()

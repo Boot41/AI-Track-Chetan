@@ -79,16 +79,21 @@ async def db(session_factory):  # type: ignore[no-untyped-def]
 
 
 @pytest.fixture
-async def client(session_factory):  # type: ignore[no-untyped-def]
+def test_app(session_factory):  # type: ignore[no-untyped-def]
     from app.api.deps import db_session as db_session_dep
 
-    test_app = _create_test_app()
+    app = _create_test_app()
 
     async def _override() -> AsyncGenerator[AsyncSession, None]:
         async with session_factory() as session:
             yield session
 
-    test_app.dependency_overrides[db_session_dep] = _override
+    app.dependency_overrides[db_session_dep] = _override
+    return app
+
+
+@pytest.fixture
+async def client(test_app):  # type: ignore[no-untyped-def]
     transport = ASGITransport(app=test_app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

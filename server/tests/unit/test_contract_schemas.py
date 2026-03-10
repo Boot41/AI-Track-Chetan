@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.agent.routing_spec import ROUTING_SPEC
-from app.schemas.phase0 import (
+from app.schemas.contracts import (
     AgentRequestEnvelope,
     AgentTarget,
     ComparisonAxis,

@@ -111,6 +111,7 @@ Owns:
 - Keep frontend thin.
 - Keep backend thin.
 - Put domain intelligence in the agent layer.
+- Use descriptive file, module, component, and test names based on responsibility, not roadmap phase labels.
 - Do not move scoring, retrieval, or reasoning into API route handlers.
 - Do not make the frontend responsible for business decisions.
 - Prefer explicit tools and subagents over one large opaque prompt.
@@ -119,6 +120,14 @@ Owns:
 - Prefer deterministic post-processing for scorecards whenever possible.
 - Do not fabricate evidence, clauses, or metrics.
 - If retrieval confidence is low, return uncertainty explicitly.
+
+### Naming Rule
+
+- Roadmap phases such as `Phase 0`, `Phase 1`, and later phases are planning labels only.
+- Do not create long-lived modules or test files named like `phase0.py`, `phase1.py`, `test_phase0_schemas.py`, `phase_2.ts`, or similar.
+- Prefer names such as `contracts.py`, `chat_api.py`, `public-contract.ts`, `agent_client.py`, or other responsibility-based names.
+- Prefer test names such as `test_contract_schemas.py`, `test_chat_api.py`, or `contract-stub.spec.ts`.
+- Fixture directories or migration identifiers may retain phase labels when they are explicitly tied to roadmap artifacts or historical ordering.
 
 ## Agent Standard
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from app.schemas.phase0 import DocumentFactContract, PublicResponseContract, QueryClassification
+from app.schemas.contracts import DocumentFactContract, PublicResponseContract, QueryClassification
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AGENT_FIXTURE_DIR = REPO_ROOT / "agent" / "app" / "evals" / "fixtures" / "phase0"

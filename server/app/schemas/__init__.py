@@ -1,4 +1,4 @@
-from app.schemas.phase0 import (
+from app.schemas.contracts import (
     AgentRequestEnvelope,
     AgentTarget,
     ComparisonAxis,
