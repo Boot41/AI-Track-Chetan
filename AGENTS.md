@@ -312,6 +312,7 @@ For any completed change:
 - JSON output remains stable for frontend rendering
 - git changes are in a mergeable state
 - for every PR raised, the PR description includes a detailed summary of the change
+- before every push, ensure `.github/workflows/ci.yml` passes
 
 ## Change Heuristics for Future Agents
 
