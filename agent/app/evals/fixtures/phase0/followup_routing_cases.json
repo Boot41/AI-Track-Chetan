@@ -1,0 +1,89 @@
+[
+  {
+    "fixture_id": "followup-narrative",
+    "query": "Why did the narrative score come in below benchmark?",
+    "expected_classification": {
+      "query_type": "followup_why_narrative",
+      "target_agents": [
+        "narrative_analysis"
+      ],
+      "reuse_cached_outputs": true,
+      "requires_recomputation": false
+    }
+  },
+  {
+    "fixture_id": "followup-roi",
+    "query": "Why is the ROI projection only slightly positive?",
+    "expected_classification": {
+      "query_type": "followup_why_roi",
+      "target_agents": [
+        "roi_prediction"
+      ],
+      "reuse_cached_outputs": true,
+      "requires_recomputation": false
+    }
+  },
+  {
+    "fixture_id": "followup-risk",
+    "query": "Why is the contract risk marked high?",
+    "expected_classification": {
+      "query_type": "followup_why_risk",
+      "target_agents": [
+        "risk_contract_analysis"
+      ],
+      "reuse_cached_outputs": true,
+      "requires_recomputation": false
+    }
+  },
+  {
+    "fixture_id": "followup-catalog",
+    "query": "Why is the catalog fit score strong in LATAM?",
+    "expected_classification": {
+      "query_type": "followup_why_catalog",
+      "target_agents": [
+        "catalog_fit"
+      ],
+      "reuse_cached_outputs": true,
+      "requires_recomputation": false
+    }
+  },
+  {
+    "fixture_id": "scenario-budget",
+    "query": "What changes if production budget increases by 15%?",
+    "expected_classification": {
+      "query_type": "scenario_change_budget",
+      "target_agents": [
+        "roi_prediction",
+        "recommendation_engine"
+      ],
+      "reuse_cached_outputs": true,
+      "requires_recomputation": true
+    }
+  },
+  {
+    "fixture_id": "scenario-localization",
+    "query": "What if we add dubs for Hindi and Bahasa Indonesia?",
+    "expected_classification": {
+      "query_type": "scenario_change_localization",
+      "target_agents": [
+        "roi_prediction",
+        "catalog_fit",
+        "recommendation_engine"
+      ],
+      "reuse_cached_outputs": true,
+      "requires_recomputation": true
+    }
+  },
+  {
+    "fixture_id": "general-question",
+    "query": "What does our current YA thriller gap look like?",
+    "expected_classification": {
+      "query_type": "general_question",
+      "target_agents": [
+        "document_retrieval"
+      ],
+      "reuse_cached_outputs": false,
+      "requires_recomputation": false
+    }
+  }
+]

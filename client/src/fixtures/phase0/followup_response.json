@@ -1,0 +1,40 @@
+{
+  "answer": "The ROI stayed close to breakeven because the current model assumes only a modest retention lift outside the core YA audience, while localization has not been expanded yet.",
+  "scorecard": {
+    "scorecard_type": "followup",
+    "query_type": "followup_why_roi",
+    "title": "Neon Shore ROI Follow-Up",
+    "recommendation": "CONDITIONAL",
+    "estimated_roi": 1.18,
+    "risk_level": "MEDIUM",
+    "risk_flags": [
+      {
+        "code": "budget_sensitivity",
+        "severity": "MEDIUM",
+        "summary": "Higher-than-plan episode costs erase most upside."
+      }
+    ],
+    "focus_area": "roi"
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-retention-assumption",
+      "source_type": "structured_metric",
+      "document_id": null,
+      "section_id": null,
+      "snippet": "Modeled retention lift is 0.7 points without additional localization investment.",
+      "source_reference": "ROI scenario sheet v1",
+      "retrieval_method": "derived",
+      "confidence_score": 0.84,
+      "used_by_agent": "roi_prediction",
+      "claim_it_supports": "The ROI case depends on modest retention lift assumptions."
+    }
+  ],
+  "meta": {
+    "warnings": [
+      "Follow-up answer is based on cached ROI outputs."
+    ],
+    "confidence": 0.75,
+    "review_required": false
+  }
+}

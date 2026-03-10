@@ -1,0 +1,58 @@
+{
+  "answer": "Midnight Courts is the better immediate investment because it carries stronger near-term ROI with less production execution risk, although Neon Shore remains the better franchise upside bet.",
+  "scorecard": {
+    "scorecard_type": "comparison",
+    "query_type": "comparison",
+    "title": "Neon Shore vs Midnight Courts Comparison",
+    "comparison": {
+      "options": [
+        {
+          "option_id": "pitch-neon-shore",
+          "label": "Neon Shore",
+          "query_type": "original_eval",
+          "recommendation": "CONDITIONAL",
+          "estimated_roi": 1.18,
+          "catalog_fit_score": 81.0,
+          "risk_level": "MEDIUM"
+        },
+        {
+          "option_id": "catalog-midnight-courts",
+          "label": "Midnight Courts",
+          "query_type": "acquisition_eval",
+          "recommendation": "GREENLIGHT",
+          "estimated_roi": 1.26,
+          "catalog_fit_score": 76.0,
+          "risk_level": "LOW"
+        }
+      ],
+      "winning_option_id": "catalog-midnight-courts",
+      "comparison_axes": [
+        "narrative",
+        "roi",
+        "risk",
+        "catalog_fit"
+      ],
+      "summary": "Midnight Courts wins on ROI and operational risk, while Neon Shore leads on longer-tail catalog fit."
+    },
+    "risk_flags": []
+  },
+  "evidence": [
+    {
+      "evidence_id": "ev-midnight-performance",
+      "source_type": "structured_metric",
+      "document_id": null,
+      "section_id": null,
+      "snippet": "Comparable acquired courtroom dramas sustained above-average retention in Southeast Asia for 14 months.",
+      "source_reference": "Acquisition benchmark panel H2 2025",
+      "retrieval_method": "sql",
+      "confidence_score": 0.9,
+      "used_by_agent": "comparison_synthesis",
+      "claim_it_supports": "Midnight Courts has stronger near-term ROI."
+    }
+  ],
+  "meta": {
+    "warnings": [],
+    "confidence": 0.82,
+    "review_required": false
+  }
+}
