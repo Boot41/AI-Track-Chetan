@@ -26,6 +26,15 @@ Preserve PostgreSQL as the system of record, use PostgreSQL FTS plus `pgvector` 
 
 ## Core Contracts And Defaults
 
+### Naming convention
+
+Roadmap phases are delivery markers, not module names.
+
+- Use descriptive implementation names based on responsibility.
+- Avoid names such as `phase0.py`, `phase1.py`, `test_phase0_schemas.py`, `phase_2.ts`, or phase-prefixed service and test modules.
+- Prefer names such as `contracts.py`, `chat_api.py`, `public-contract.ts`, `agent_client.py`, `retrieval_models.py`, `scorecard_formatter.py`, `test_contract_schemas.py`, or `contract-stub.spec.ts`.
+- Phase labels are still acceptable for roadmap text, milestone branches, golden fixture sets, and ordered migration identifiers where historical sequencing matters.
+
 ### Public response contract
 
 - `answer`: natural-language recommendation or follow-up response

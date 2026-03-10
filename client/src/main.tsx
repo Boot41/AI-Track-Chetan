@@ -12,13 +12,18 @@ const queryClient = new QueryClient({
 
 const theme = createTheme({
   palette: {
-    mode: "dark",
-    primary: { main: "#3b82f6" },
-    secondary: { main: "#8b5cf6" },
-    background: { default: "#0a0a14", paper: "#111827" },
+    mode: "light",
+    primary: { main: "#115e59", contrastText: "#f8fafc" },
+    secondary: { main: "#c2410c" },
+    background: { default: "#f6efe1", paper: "#fffdf7" },
   },
-  shape: { borderRadius: 8 },
-  typography: { fontFamily: '"Inter", "Roboto", sans-serif' },
+  shape: { borderRadius: 18 },
+  typography: {
+    fontFamily: '"IBM Plex Sans", "Space Grotesk", sans-serif',
+    h3: { fontWeight: 700 },
+    h4: { fontWeight: 700 },
+    h5: { fontWeight: 700 },
+  },
 });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

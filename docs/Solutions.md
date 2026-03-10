@@ -7,6 +7,15 @@ Principles:
 - UI handles input and display only.
 - Backend handles authentication and request routing.
 - Agent service owns reasoning, retrieval, and decision synthesis.
+- Roadmap phase names are for planning only; implementation modules and test files should use responsibility-based names.
+
+Examples:
+
+- use `contracts.py`, not `phase0.py`
+- use `chat_api.py`, not `phase1.py`
+- use `public-contract.ts`, not `phase0.ts`
+- use `test_contract_schemas.py`, not `test_phase0_schemas.py`
+- use `contract-stub.spec.ts`, not `phase15-contract-stub.spec.ts`
 
 ---
 

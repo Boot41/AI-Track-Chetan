@@ -35,6 +35,7 @@ Design principle:
 - keep the frontend thin
 - keep the backend thin
 - keep retrieval, reasoning, scoring, and recommendation logic in the standalone agent service
+- keep implementation and test naming descriptive; roadmap phase labels should not become long-lived module or test names
 
 ## Tech Stack
 

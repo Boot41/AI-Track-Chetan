@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.schemas.phase0 import AgentTarget, QueryClassification, QueryType
+from app.schemas.contracts import AgentTarget, QueryClassification, QueryType
 
 ROUTING_SPEC: dict[QueryType, QueryClassification] = {
     QueryType.ORIGINAL_EVAL: QueryClassification(
