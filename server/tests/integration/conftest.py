@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -34,13 +34,15 @@ def _create_test_app() -> FastAPI:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def test_settings() -> AsyncGenerator[Settings, None]:
+def test_settings() -> Generator[Settings, None, None]:
     original_env = {
         "DATABASE_URL": os.environ.get("DATABASE_URL"),
         "SECRET_KEY": os.environ.get("SECRET_KEY"),
         "ENV": os.environ.get("ENV"),
     }
-    os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:postgres@localhost:5432/app_scaffold_test"
+    os.environ["DATABASE_URL"] = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/app_scaffold_test"
+    )
     os.environ["SECRET_KEY"] = "test-secret"
     os.environ["ENV"] = "test"
     get_settings.cache_clear()
