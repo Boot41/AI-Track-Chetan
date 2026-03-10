@@ -13,7 +13,7 @@ from app.schemas.contracts import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-PHASE0_FIXTURE_DIR = REPO_ROOT / "client" / "src" / "fixtures" / "phase0"
+PUBLIC_RESPONSE_FIXTURE_DIR = REPO_ROOT / "server" / "app" / "fixtures" / "public_responses"
 
 
 class AgentServiceClient(Protocol):
@@ -23,7 +23,7 @@ class AgentServiceClient(Protocol):
 class StubAgentServiceClient:
     """Phase 1 stub that returns Phase 0 public fixtures via a service boundary."""
 
-    def __init__(self, fixture_dir: Path = PHASE0_FIXTURE_DIR) -> None:
+    def __init__(self, fixture_dir: Path = PUBLIC_RESPONSE_FIXTURE_DIR) -> None:
         self._fixture_dir = fixture_dir
 
     async def evaluate(self, envelope: AgentRequestEnvelope) -> PublicResponseContract:

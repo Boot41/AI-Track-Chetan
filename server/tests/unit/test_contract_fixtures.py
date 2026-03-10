@@ -10,6 +10,7 @@ from app.schemas.contracts import DocumentFactContract, PublicResponseContract, 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 AGENT_FIXTURE_DIR = REPO_ROOT / "agent" / "app" / "evals" / "fixtures" / "phase0"
 CLIENT_FIXTURE_DIR = REPO_ROOT / "client" / "src" / "fixtures" / "phase0"
+SERVER_FIXTURE_DIR = REPO_ROOT / "server" / "app" / "fixtures" / "public_responses"
 
 
 def _load_json(path: Path) -> object:
@@ -56,5 +57,19 @@ def test_contract_risk_clause_fixture_contains_valid_document_facts() -> None:
 )
 def test_frontend_phase0_response_fixtures_match_public_contract(filename: str) -> None:
     payload = _load_json(CLIENT_FIXTURE_DIR / filename)
+    response = PublicResponseContract.model_validate(payload)
+    assert set(response.meta.model_dump()) == {"warnings", "confidence", "review_required"}
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "standard_evaluation_response.json",
+        "comparison_response.json",
+        "followup_response.json",
+    ],
+)
+def test_backend_stub_response_fixtures_match_public_contract(filename: str) -> None:
+    payload = _load_json(SERVER_FIXTURE_DIR / filename)
     response = PublicResponseContract.model_validate(payload)
     assert set(response.meta.model_dump()) == {"warnings", "confidence", "review_required"}
