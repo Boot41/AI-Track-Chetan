@@ -30,9 +30,9 @@ async def test_stub_agent_client_adapts_comparison_fixture() -> None:
     response = await client.evaluate(
         AgentRequestEnvelope.model_validate(
             {
-            "message": "Compare both options",
-            "context": {"user_id": 1, "session_id": "sess-1"},
-            "session_state": {"query_type": QueryType.COMPARISON.value},
+                "message": "Compare both options",
+                "context": {"user_id": 1, "session_id": "sess-1"},
+                "session_state": {"query_type": QueryType.COMPARISON.value},
             }
         )
     )

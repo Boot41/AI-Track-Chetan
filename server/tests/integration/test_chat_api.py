@@ -175,9 +175,9 @@ async def test_stub_proxy_dependency_returns_phase0_contract() -> None:
     response = await StubAgentServiceClient().evaluate(
         AgentRequestEnvelope.model_validate(
             {
-            "message": "Should we buy this?",
-            "context": {"user_id": 1, "session_id": "sess-1"},
-            "session_state": {"query_type": "acquisition_eval"},
+                "message": "Should we buy this?",
+                "context": {"user_id": 1, "session_id": "sess-1"},
+                "session_state": {"query_type": "acquisition_eval"},
             }
         )
     )
