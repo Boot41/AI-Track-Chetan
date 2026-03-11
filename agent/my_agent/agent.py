@@ -3,6 +3,7 @@ from __future__ import annotations
 from google.adk.agents import Agent
 
 from agent.app.agents.orchestrator import AgentOrchestrator
+from agent.app.formatters import format_public_response
 from agent.app.persistence.session import get_sessionmaker
 from agent.app.schemas.orchestration import AgentRequest, TrustedRequestContext
 
@@ -19,7 +20,7 @@ async def orchestrate_query(
             context=TrustedRequestContext(user_id=user_id, session_id=session_id),
         )
     )
-    return result.model_dump(mode="json")
+    return format_public_response(result)
 
 
 root_agent = Agent(
@@ -40,11 +41,10 @@ async def run_orchestrator(
     user_id: int = 1,
     session_id: str = "session",
 ) -> dict[str, object]:
-    return (
-        await orchestrator.orchestrate(
-            AgentRequest(
-                message=message,
-                context=TrustedRequestContext(user_id=user_id, session_id=session_id),
-            )
+    result = await orchestrator.orchestrate(
+        AgentRequest(
+            message=message,
+            context=TrustedRequestContext(user_id=user_id, session_id=session_id),
         )
-    ).model_dump(mode="json")
+    )
+    return format_public_response(result)

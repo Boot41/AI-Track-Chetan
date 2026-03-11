@@ -15,6 +15,7 @@ from app.schemas.contracts import (
     DocumentFactContract,
     EvaluationScorecard,
     MetaContract,
+    PublicResponseContract,
     QueryClassification,
     QueryType,
     RecommendationConfig,
@@ -209,3 +210,25 @@ def test_document_fact_contract_is_contract_only_and_atomic() -> None:
 def test_risk_flag_schema_allows_locked_severities() -> None:
     risk = RiskFlag(code="territory_restriction", severity=RiskSeverity.HIGH, summary="Limited SEA")
     assert risk.severity == RiskSeverity.HIGH
+
+
+def test_public_response_contract_rejects_non_minimal_meta_shape() -> None:
+    with pytest.raises(ValidationError):
+        PublicResponseContract.model_validate(
+            {
+                "answer": "answer",
+                "scorecard": {
+                    "scorecard_type": "evaluation",
+                    "query_type": "original_eval",
+                    "title": "title",
+                    "risk_flags": [],
+                },
+                "evidence": [],
+                "meta": {
+                    "warnings": [],
+                    "confidence": 0.5,
+                    "review_required": False,
+                    "internal_debug": {"timing_ms": 12},
+                },
+            }
+        )
