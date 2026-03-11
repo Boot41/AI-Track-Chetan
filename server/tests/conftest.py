@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import os
+import sys
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import jwt
 import pytest
@@ -9,6 +12,12 @@ from httpx import ASGITransport, AsyncClient
 
 from app.core.config import get_settings
 from app.main import app
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+os.environ.setdefault("DISABLE_PGVECTOR", "1")
 
 
 @pytest.fixture

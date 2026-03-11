@@ -1,0 +1,96 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from agent.app.ingestion.classifiers import DocumentTypeClassifier
+from agent.app.ingestion.extractors import ContractFactExtractor, DocumentRiskExtractor
+from agent.app.ingestion.inventory import RAW_DATA_ROOT, build_ingestion_inventory
+from agent.app.ingestion.parsers import ParserRouter
+from agent.app.persistence.repository import DocumentRepository
+from agent.app.retrieval.embeddings import HashEmbeddingService
+from agent.app.schemas.ingestion import DocumentMetadata, IngestionResult, IngestionStatus
+
+
+class DocumentIngestionService:
+    def __init__(
+        self,
+        repository: DocumentRepository | None = None,
+        classifier: DocumentTypeClassifier | None = None,
+        parser_router: ParserRouter | None = None,
+        embedding_service: HashEmbeddingService | None = None,
+        fact_extractor: ContractFactExtractor | None = None,
+        risk_extractor: DocumentRiskExtractor | None = None,
+    ) -> None:
+        self._repository = repository or DocumentRepository()
+        self._classifier = classifier or DocumentTypeClassifier()
+        self._parser_router = parser_router or ParserRouter()
+        self._embedding_service = embedding_service or HashEmbeddingService()
+        self._fact_extractor = fact_extractor or ContractFactExtractor()
+        self._risk_extractor = risk_extractor or DocumentRiskExtractor()
+
+    async def ingest_corpus(
+        self,
+        session: AsyncSession,
+        raw_root: Path = RAW_DATA_ROOT,
+    ) -> list[IngestionResult]:
+        inventory = build_ingestion_inventory(raw_root)
+        results: list[IngestionResult] = []
+        for item in inventory.items:
+            for registration in item.documents:
+                classification = self._classifier.classify(registration)
+                content = Path(registration.source_path).read_text(encoding="utf-8")
+                parser = self._parser_router.get_parser(classification)
+                parsed = parser.parse(registration, classification, content)
+                metadata = DocumentMetadata(
+                    document_id=registration.document_id,
+                    content_id=registration.content_id,
+                    pitch_id=registration.pitch_id,
+                    source_path=registration.source_path,
+                    filename=registration.filename,
+                    title=registration.title,
+                    doc_type=classification.doc_type,
+                    sectioning_hint=classification.sectioning_hint,
+                    parser_used=classification.parser_used,
+                    ingestion_status=IngestionStatus.SUCCESS if parsed.sections else IngestionStatus.FAILED,
+                    warnings=parsed.warnings,
+                    errors=[] if parsed.sections else ["No sections parsed"],
+                    fallback_applied=parsed.fallback_applied,
+                    source_metadata={
+                        "manifest_doc_type": registration.manifest_doc_type,
+                        "primary_use": registration.primary_use,
+                        "expected_entities": registration.expected_entities,
+                    },
+                )
+                facts = self._fact_extractor.extract(classification, parsed.sections)
+                risks = self._risk_extractor.extract(classification, parsed.sections)
+                embeddings = self._embedding_service.embed_texts([section.content for section in parsed.sections])
+                embedding_map = {
+                    section.section_id: embedding
+                    for section, embedding in zip(parsed.sections, embeddings, strict=True)
+                }
+                await self._repository.replace_document(
+                    session,
+                    metadata,
+                    parsed.sections,
+                    embedding_map,
+                    facts,
+                    risks,
+                )
+                results.append(
+                    IngestionResult(
+                        document_id=registration.document_id,
+                        content_id=registration.content_id,
+                        status=metadata.ingestion_status,
+                        parser_used=metadata.parser_used,
+                        sections_indexed=len(parsed.sections),
+                        sections_failed=0,
+                        warnings=metadata.warnings,
+                        errors=metadata.errors,
+                        fallback_applied=metadata.fallback_applied,
+                        facts_extracted=len(facts),
+                        risks_extracted=len(risks),
+                    )
+                )
+        return results
