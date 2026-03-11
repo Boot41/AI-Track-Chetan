@@ -48,6 +48,7 @@ ROUTING_MATRIX: dict[QueryType, RouteDefinition] = {
             AgentTarget.RISK_CONTRACT_ANALYSIS,
             AgentTarget.CATALOG_FIT,
             AgentTarget.COMPARISON_SYNTHESIS,
+            AgentTarget.RECOMMENDATION_ENGINE,
         ],
         recompute_outputs=[
             CachedOutputName.NARRATIVE,
@@ -56,7 +57,10 @@ ROUTING_MATRIX: dict[QueryType, RouteDefinition] = {
             CachedOutputName.CATALOG,
         ],
         comparison_enabled=True,
-        downstream_handoffs=[AgentTarget.COMPARISON_SYNTHESIS],
+        downstream_handoffs=[
+            AgentTarget.COMPARISON_SYNTHESIS,
+            AgentTarget.RECOMMENDATION_ENGINE,
+        ],
     ),
     QueryType.FOLLOWUP_WHY_NARRATIVE: RouteDefinition(
         query_type=QueryType.FOLLOWUP_WHY_NARRATIVE,

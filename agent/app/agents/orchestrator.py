@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from logging import getLogger
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from agent.app.agents.interfaces import (
@@ -20,16 +22,29 @@ from agent.app.agents.subagents import (
     RiskContractAnalysisAgent,
     RoiPredictionAgent,
 )
+from agent.app.scorers import (
+    CatalogFitScorer,
+    CompletionRateScorer,
+    RecommendationEngine,
+    RiskSeverityScorer,
+    RoiScorer,
+)
+from agent.app.schemas.evaluation import NarrativeScoreInputs
 from agent.app.schemas.orchestration import (
     AgentExecutionContext,
     AgentInvocation,
     AgentRequest,
     AgentTarget,
     CachedOutputName,
+    CatalogAgentOutput,
     ComparisonOption,
     HandoffOutput,
+    NarrativeAgentOutput,
     OrchestrationResult,
     QueryType,
+    RetrievalAgentOutput,
+    RiskAgentOutput,
+    RoiAgentOutput,
     RoutePlan,
     SessionAgentOutput,
     SessionState,
@@ -57,6 +72,11 @@ class AgentOrchestrator:
         roi_agent: RoiPredictionAgentInterface | None = None,
         risk_agent: RiskContractAnalysisAgentInterface | None = None,
         catalog_agent: CatalogFitAgentInterface | None = None,
+        completion_rate_scorer: CompletionRateScorer | None = None,
+        roi_scorer: RoiScorer | None = None,
+        risk_severity_scorer: RiskSeverityScorer | None = None,
+        catalog_fit_scorer: CatalogFitScorer | None = None,
+        recommendation_engine: RecommendationEngine | None = None,
     ) -> None:
         provenance_tool = EvidencePackagingTool()
         hybrid_tool = HybridDocumentRetrievalTool(session_factory)
@@ -78,6 +98,11 @@ class AgentOrchestrator:
         self._catalog_agent = catalog_agent or CatalogFitAgent(
             hybrid_tool, provenance_tool
         )
+        self._completion_rate_scorer = completion_rate_scorer or CompletionRateScorer()
+        self._roi_scorer = roi_scorer or RoiScorer()
+        self._risk_severity_scorer = risk_severity_scorer or RiskSeverityScorer()
+        self._catalog_fit_scorer = catalog_fit_scorer or CatalogFitScorer()
+        self._recommendation_engine = recommendation_engine or RecommendationEngine()
 
     async def orchestrate(self, request: AgentRequest) -> OrchestrationResult:
         request = AgentRequest.model_validate(request)
@@ -102,6 +127,7 @@ class AgentOrchestrator:
             comparison_option_ids=[
                 option.option_id for option in context.comparison_options
             ],
+            recommendation_config=self._recommendation_engine.config,
         )
 
         if self._needs_document_prefetch(classification.query_type):
@@ -131,15 +157,21 @@ class AgentOrchestrator:
                     ]
                 )
             elif target == AgentTarget.NARRATIVE_ANALYSIS:
-                if (
-                    CachedOutputName.NARRATIVE in route_plan.cached_outputs_to_use
-                    and session_state.narrative_output
-                ):
+                cached = self._cached_output(
+                    session_state,
+                    CachedOutputName.NARRATIVE,
+                    NarrativeAgentOutput,
+                )
+                if CachedOutputName.NARRATIVE in route_plan.cached_outputs_to_use and cached:
+                    result.narrative_output = cached
+                    session_output = session_state.narrative_output
                     result.invoked_agents.append(
                         AgentInvocation(
                             target=target,
                             cached=True,
-                            details={"summary": session_state.narrative_output.summary},
+                            details={
+                                "summary": session_output.summary if session_output else cached.summary
+                            },
                         )
                     )
                 else:
@@ -156,22 +188,33 @@ class AgentOrchestrator:
                         ]
                     )
             elif target == AgentTarget.ROI_PREDICTION:
-                if (
-                    CachedOutputName.ROI in route_plan.cached_outputs_to_use
-                    and session_state.roi_output
-                ):
+                cached = self._cached_output(
+                    session_state,
+                    CachedOutputName.ROI,
+                    RoiAgentOutput,
+                )
+                if CachedOutputName.ROI in route_plan.cached_outputs_to_use and cached:
+                    result.roi_output = cached
+                    session_output = session_state.roi_output
                     result.invoked_agents.append(
                         AgentInvocation(
                             target=target,
                             cached=True,
-                            details={"summary": session_state.roi_output.summary},
+                            details={
+                                "summary": session_output.summary if session_output else cached.summary
+                            },
                         )
                     )
                 else:
+                    narrative_context = result.narrative_output or self._cached_output(
+                        session_state,
+                        CachedOutputName.NARRATIVE,
+                        NarrativeAgentOutput,
+                    )
                     result.roi_output = await self._roi_agent.run(
                         context,
                         result.retrieval_output,
-                        result.narrative_output,
+                        narrative_context,
                     )
                     result.invoked_agents.append(AgentInvocation(target=target))
                     result.invoked_tools.extend(
@@ -181,15 +224,21 @@ class AgentOrchestrator:
                         ]
                     )
             elif target == AgentTarget.RISK_CONTRACT_ANALYSIS:
-                if (
-                    CachedOutputName.RISK in route_plan.cached_outputs_to_use
-                    and session_state.risk_output
-                ):
+                cached = self._cached_output(
+                    session_state,
+                    CachedOutputName.RISK,
+                    RiskAgentOutput,
+                )
+                if CachedOutputName.RISK in route_plan.cached_outputs_to_use and cached:
+                    result.risk_output = cached
+                    session_output = session_state.risk_output
                     result.invoked_agents.append(
                         AgentInvocation(
                             target=target,
                             cached=True,
-                            details={"summary": session_state.risk_output.summary},
+                            details={
+                                "summary": session_output.summary if session_output else cached.summary
+                            },
                         )
                     )
                 else:
@@ -204,15 +253,21 @@ class AgentOrchestrator:
                         ]
                     )
             elif target == AgentTarget.CATALOG_FIT:
-                if (
-                    CachedOutputName.CATALOG in route_plan.cached_outputs_to_use
-                    and session_state.catalog_output
-                ):
+                cached = self._cached_output(
+                    session_state,
+                    CachedOutputName.CATALOG,
+                    CatalogAgentOutput,
+                )
+                if CachedOutputName.CATALOG in route_plan.cached_outputs_to_use and cached:
+                    result.catalog_output = cached
+                    session_output = session_state.catalog_output
                     result.invoked_agents.append(
                         AgentInvocation(
                             target=target,
                             cached=True,
-                            details={"summary": session_state.catalog_output.summary},
+                            details={
+                                "summary": session_output.summary if session_output else cached.summary
+                            },
                         )
                     )
                 else:
@@ -220,32 +275,102 @@ class AgentOrchestrator:
                         context, result.retrieval_output
                     )
                     result.invoked_agents.append(AgentInvocation(target=target))
-                    result.invoked_tools.extend(
-                        [
-                            ToolInvocation(
-                                tool_name=ToolName.HYBRID_DOCUMENT_RETRIEVAL
-                            ),
-                            ToolInvocation(tool_name=ToolName.EVIDENCE_PACKAGING),
-                        ]
+                    result.invoked_tools.append(
+                        ToolInvocation(tool_name=ToolName.EVIDENCE_PACKAGING)
                     )
-            elif target in {
-                AgentTarget.RECOMMENDATION_ENGINE,
-                AgentTarget.COMPARISON_SYNTHESIS,
-            }:
+            elif target == AgentTarget.COMPARISON_SYNTHESIS:
                 dependencies = [
                     invocation.target
                     for invocation in result.invoked_agents
                     if invocation.target not in {AgentTarget.DOCUMENT_RETRIEVAL, target}
                 ]
+                summary = (
+                    "Comparison synthesis is limited to the currently active option because "
+                    "the Phase 3 scaffolding does not yet pass multiple option payloads."
+                )
                 result.handoffs.append(
                     HandoffOutput(
                         target=target,
-                        summary=f"{target.value} handoff prepared for downstream processing.",
+                        summary=summary,
                         dependencies=dependencies,
                     )
                 )
                 result.invoked_agents.append(
                     AgentInvocation(target=target, details={"handoff_only": True})
+                )
+                if route_plan.evaluate_all_comparison_options and not context.comparison_options:
+                    result.warnings.append(
+                        "Comparison query received no option state; evaluated only the active evidence context."
+                    )
+            elif target == AgentTarget.RECOMMENDATION_ENGINE:
+                narrative_output = result.narrative_output or self._cached_output(
+                    session_state,
+                    CachedOutputName.NARRATIVE,
+                    NarrativeAgentOutput,
+                )
+                roi_output = result.roi_output or self._cached_output(
+                    session_state,
+                    CachedOutputName.ROI,
+                    RoiAgentOutput,
+                )
+                risk_output = result.risk_output or self._cached_output(
+                    session_state,
+                    CachedOutputName.RISK,
+                    RiskAgentOutput,
+                )
+                catalog_output = result.catalog_output or self._cached_output(
+                    session_state,
+                    CachedOutputName.CATALOG,
+                    CatalogAgentOutput,
+                )
+                if (
+                    roi_output is None
+                    or risk_output is None
+                    or catalog_output is None
+                ):
+                    result.warnings.append(
+                        "Recommendation engine could not run because one or more specialist outputs were unavailable."
+                    )
+                    continue
+                result.completion_score = self._completion_rate_scorer.score(
+                    roi_output.completion_inputs
+                )
+                result.roi_score = self._roi_scorer.score(
+                    roi_output.roi_inputs,
+                    roi_output.retention_inputs,
+                    roi_output.cost_per_view_inputs,
+                    result.completion_score,
+                )
+                result.risk_score = self._risk_severity_scorer.score(
+                    risk_output.findings
+                )
+                result.catalog_fit_score = self._catalog_fit_scorer.score(
+                    catalog_output.inputs
+                )
+                result.recommendation_result = self._recommendation_engine.recommend(
+                    (
+                        narrative_output.score_inputs
+                        if narrative_output is not None
+                        else NarrativeScoreInputs(
+                            hook_strength=0.55,
+                            pacing_strength=0.6,
+                            character_strength=0.55,
+                            franchise_strength=0.4,
+                            red_flag_penalty=0.08,
+                        )
+                    ),
+                    result.roi_score,
+                    result.risk_score,
+                    result.catalog_fit_score,
+                )
+                result.invoked_agents.append(
+                    AgentInvocation(
+                        target=target,
+                        details={
+                            "recommendation": result.recommendation_result.outcome.value,
+                            "weighted_score": result.recommendation_result.weighted_score,
+                        },
+                    )
                 )
 
         result.warnings.extend(
@@ -264,6 +389,11 @@ class AgentOrchestrator:
                     item.target.value for item in result.invoked_agents if item.cached
                 ],
                 "recomputed": [item.value for item in route_plan.outputs_to_recompute],
+                "recommendation": (
+                    result.recommendation_result.outcome.value
+                    if result.recommendation_result is not None
+                    else None
+                ),
             },
         )
         return result
@@ -381,6 +511,17 @@ class AgentOrchestrator:
         }
         return output_map[output_name]
 
+    def _cached_output(
+        self,
+        session_state: SessionState,
+        output_name: CachedOutputName,
+        schema: type[Any],
+    ) -> Any | None:
+        session_output = self._session_output(session_state, output_name)
+        if session_output is None or not session_output.payload:
+            return None
+        return schema.model_validate(session_output.payload)
+
     def _warnings_for_missing_outputs(
         self,
         session_state: SessionState,
@@ -402,6 +543,13 @@ class AgentOrchestrator:
         summary = getattr(value, "summary")
         if not isinstance(summary, str):
             return None
+        confidence = getattr(value, "confidence", 0.75)
+        if not isinstance(confidence, (int, float)):
+            confidence = 0.75
+        payload = value.model_dump(mode="json") if hasattr(value, "model_dump") else {}
         return SessionAgentOutput(
-            summary=summary, confidence=0.6, generated_at=generated_at
+            summary=summary,
+            confidence=float(confidence),
+            generated_at=generated_at,
+            payload=payload,
         )

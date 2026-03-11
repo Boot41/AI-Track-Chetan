@@ -53,7 +53,12 @@ def dummy_session_factory() -> async_sessionmaker[AsyncSession]:
 
 
 def _cached_output(summary: str) -> SessionAgentOutput:
-    return SessionAgentOutput(summary=summary, confidence=0.8, generated_at=datetime.now(UTC))
+    return SessionAgentOutput(
+        summary=summary,
+        confidence=0.8,
+        generated_at=datetime.now(UTC),
+        payload={"summary": summary},
+    )
 
 
 def test_query_classifier_matches_followup_fixtures() -> None:
@@ -105,6 +110,9 @@ def test_routing_matrix_encodes_documented_defaults() -> None:
         CachedOutputName.CATALOG,
     ]
     assert ROUTING_MATRIX[QueryType.COMPARISON].comparison_enabled is True
+    assert (
+        ROUTING_MATRIX[QueryType.COMPARISON].target_agents[-1] == AgentTarget.RECOMMENDATION_ENGINE
+    )
 
 
 def test_session_state_reuse_decision_prefers_cached_followup_outputs(
@@ -134,9 +142,12 @@ def test_session_state_reuse_decision_clears_narrative_recompute_when_cache_exis
 @pytest.mark.asyncio
 async def test_tool_interfaces_validate_typed_payloads() -> None:
     sql_result = await SqlRetrievalTool().run(
-        SqlRetrievalRequest(pitch_id="pitch_shadow_protocol", metric_keys=["budget_assumption"])
+        SqlRetrievalRequest(
+            pitch_id="pitch_shadow_protocol",
+            metric_keys=["baseline_completion_rate"],
+        )
     )
-    assert sql_result.records[0].metric_key == "budget_assumption"
+    assert sql_result.records[0].metric_key == "baseline_completion_rate"
 
     candidate = RetrievalCandidate(
         document_id="doc-1",
