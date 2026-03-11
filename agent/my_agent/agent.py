@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from google.adk.agents import Agent
 
-from app.agents.orchestrator import AgentOrchestrator
-from app.formatters import format_public_response
-from app.persistence.session import get_sessionmaker
-from app.schemas.orchestration import AgentRequest, TrustedRequestContext
+from agent.app.agents.orchestrator import AgentOrchestrator
+from agent.app.formatters import format_public_response
+from agent.app.persistence.session import get_sessionmaker
+from agent.app.schemas.orchestration import AgentRequest, TrustedRequestContext
 
 
 async def orchestrate_query(
