@@ -67,6 +67,10 @@ async def test_orchestrator_surfaces_known_contract_and_catalog_signals_for_acqu
     assert result.catalog_output.inputs.underserved_segments
     assert result.catalog_output.inputs.localization_implications
     assert result.recommendation_result is not None
+    assert all(
+        contribution.component != "narrative"
+        for contribution in result.recommendation_result.contributions
+    )
 
 
 async def test_recommendation_is_stable_for_identical_inputs(

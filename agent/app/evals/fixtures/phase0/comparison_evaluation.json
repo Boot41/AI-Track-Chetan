@@ -14,8 +14,7 @@
       "roi_prediction",
       "risk_contract_analysis",
       "catalog_fit",
-      "comparison_synthesis",
-      "recommendation_engine"
+      "comparison_synthesis"
     ],
     "reuse_cached_outputs": false,
     "requires_recomputation": true

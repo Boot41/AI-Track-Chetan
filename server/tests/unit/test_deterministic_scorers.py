@@ -282,3 +282,52 @@ def test_recommendation_engine_blocker_risk_forces_pass() -> None:
     )
     assert recommendation.outcome.value == "PASS"
     assert recommendation.override_applied == "blocker_risk_forced_pass"
+
+
+def test_recommendation_engine_renormalizes_weights_when_narrative_is_unavailable() -> None:
+    engine = RecommendationEngine()
+    recommendation = engine.recommend(
+        None,
+        roi_score=RoiScorer().score(
+            RoiInputs(
+                total_cost=40000000.0,
+                projected_viewers=20000000.0,
+                projected_revenue=130000000.0,
+                retention_value=12000000.0,
+                franchise_value=7000000.0,
+            ),
+            RetentionLiftInputs(
+                baseline_retention_lift=0.04,
+                audience_alignment=0.8,
+                churn_reduction_signal=0.8,
+                franchise_uplift=0.5,
+                regional_demand_signal=0.7,
+            ),
+            CostPerViewInputs(total_cost=40000000.0, projected_viewers=20000000.0),
+            CompletionRateScore(projected_completion_rate=0.74, rationale="test"),
+        ),
+        risk_score=RiskSeverityScorer().score([]),
+        catalog_fit_score=CatalogFitScorer().score(
+            CatalogFitInputs(
+                underserved_segments=[
+                    CatalogFitSignal(
+                        signal="gap",
+                        strength=0.9,
+                        rationale="test",
+                        source_references=[],
+                    )
+                ],
+                churn_demographics=[],
+                genre_gaps=[],
+                regional_demand=[],
+                competitor_overlap=[],
+                strategic_timing=[],
+                localization_implications=[],
+            )
+        ),
+    )
+    assert {item.component for item in recommendation.contributions} == {
+        "roi",
+        "risk",
+        "catalog_fit",
+    }

@@ -41,42 +41,58 @@ class RecommendationEngine:
 
     def recommend(
         self,
-        narrative_inputs: NarrativeScoreInputs,
+        narrative_inputs: NarrativeScoreInputs | None,
         roi_score: RoiScore,
         risk_score: RiskScore,
         catalog_fit_score: CatalogFitScore,
     ) -> RecommendationResult:
-        narrative_score = self.score_narrative(narrative_inputs)
         roi_component = self.score_roi(roi_score)
         risk_component = risk_score.safety_score
         catalog_component = catalog_fit_score.score
 
         weights = self._config.weights
+        component_specs: list[tuple[str, float, float, str]] = []
+        if narrative_inputs is not None:
+            narrative_score = self.score_narrative(narrative_inputs)
+            component_specs.append(
+                (
+                    "narrative",
+                    narrative_score,
+                    weights.narrative_weight,
+                    "Narrative strength is derived from deterministic story-quality inputs.",
+                )
+            )
+        component_specs.extend(
+            [
+                (
+                    "roi",
+                    roi_component,
+                    weights.roi_weight,
+                    "ROI combines completion-adjusted economics, retention lift, and unit cost.",
+                ),
+                (
+                    "risk",
+                    risk_component,
+                    weights.risk_weight,
+                    "Risk uses the conservative safety score from surfaced legal and regulatory findings.",
+                ),
+                (
+                    "catalog_fit",
+                    catalog_component,
+                    weights.catalog_fit_weight,
+                    "Catalog fit reflects demand gaps, churn pressure, timing, and overlap.",
+                ),
+            ]
+        )
+        total_weight = sum(weight for _, _, weight, _ in component_specs)
         contributions = [
             RecommendationContribution(
-                component="narrative",
-                raw_score=narrative_score,
-                weighted_score=round(narrative_score * weights.narrative_weight, 2),
-                rationale="Narrative strength is derived from deterministic story-quality inputs.",
-            ),
-            RecommendationContribution(
-                component="roi",
-                raw_score=roi_component,
-                weighted_score=round(roi_component * weights.roi_weight, 2),
-                rationale="ROI combines completion-adjusted economics, retention lift, and unit cost.",
-            ),
-            RecommendationContribution(
-                component="risk",
-                raw_score=risk_component,
-                weighted_score=round(risk_component * weights.risk_weight, 2),
-                rationale="Risk uses the conservative safety score from surfaced legal and regulatory findings.",
-            ),
-            RecommendationContribution(
-                component="catalog_fit",
-                raw_score=catalog_component,
-                weighted_score=round(catalog_component * weights.catalog_fit_weight, 2),
-                rationale="Catalog fit reflects demand gaps, churn pressure, timing, and overlap.",
-            ),
+                component=component,
+                raw_score=raw_score,
+                weighted_score=round(raw_score * (weight / total_weight), 2),
+                rationale=rationale,
+            )
+            for component, raw_score, weight, rationale in component_specs
         ]
         weighted_score = round(sum(item.weighted_score for item in contributions), 2)
         outcome = self._base_outcome(weighted_score)

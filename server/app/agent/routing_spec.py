@@ -34,7 +34,6 @@ ROUTING_SPEC: dict[QueryType, QueryClassification] = {
             AgentTarget.RISK_CONTRACT_ANALYSIS,
             AgentTarget.CATALOG_FIT,
             AgentTarget.COMPARISON_SYNTHESIS,
-            AgentTarget.RECOMMENDATION_ENGINE,
         ],
         reuse_cached_outputs=False,
         requires_recomputation=True,

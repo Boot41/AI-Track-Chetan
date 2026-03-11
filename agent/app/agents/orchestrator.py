@@ -29,7 +29,6 @@ from agent.app.scorers import (
     RiskSeverityScorer,
     RoiScorer,
 )
-from agent.app.schemas.evaluation import NarrativeScoreInputs
 from agent.app.schemas.orchestration import (
     AgentExecutionContext,
     AgentInvocation,
@@ -348,17 +347,7 @@ class AgentOrchestrator:
                     catalog_output.inputs
                 )
                 result.recommendation_result = self._recommendation_engine.recommend(
-                    (
-                        narrative_output.score_inputs
-                        if narrative_output is not None
-                        else NarrativeScoreInputs(
-                            hook_strength=0.55,
-                            pacing_strength=0.6,
-                            character_strength=0.55,
-                            franchise_strength=0.4,
-                            red_flag_penalty=0.08,
-                        )
-                    ),
+                    narrative_output.score_inputs if narrative_output is not None else None,
                     result.roi_score,
                     result.risk_score,
                     result.catalog_fit_score,

@@ -111,7 +111,7 @@ def test_routing_matrix_encodes_documented_defaults() -> None:
     ]
     assert ROUTING_MATRIX[QueryType.COMPARISON].comparison_enabled is True
     assert (
-        ROUTING_MATRIX[QueryType.COMPARISON].target_agents[-1] == AgentTarget.RECOMMENDATION_ENGINE
+        ROUTING_MATRIX[QueryType.COMPARISON].target_agents[-1] == AgentTarget.COMPARISON_SYNTHESIS
     )
 
 
