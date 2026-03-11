@@ -261,4 +261,90 @@ describe("App frontend integration flow", () => {
       expect(screen.getByTestId("comparison-view")).toHaveTextContent("Midnight Courts");
     });
   });
+
+  it("clears stale response content when a different session history fails to load", async () => {
+    vi.mocked(backend.getStoredAuthSession).mockReturnValue(mockAuthSession);
+    vi.mocked(backend.listSessions).mockResolvedValue([
+      {
+        id: "sess-1",
+        title: "Session One",
+        comparison_enabled: false,
+        created_at: "2026-01-01T00:00:00",
+        updated_at: "2026-01-01T00:00:00",
+        message_count: 1,
+        latest_query_type: "original_eval",
+      },
+      {
+        id: "sess-2",
+        title: "Session Two",
+        comparison_enabled: false,
+        created_at: "2026-01-01T00:00:00",
+        updated_at: "2026-01-01T00:00:00",
+        message_count: 0,
+        latest_query_type: null,
+      },
+    ]);
+    vi.mocked(backend.getSessionMessages).mockImplementation(async (sessionId: string) => {
+      if (sessionId === "sess-1") {
+        return {
+          session: {
+            id: "sess-1",
+            title: "Session One",
+            comparison_enabled: false,
+            session_state: null,
+            created_at: "2026-01-01T00:00:00",
+            updated_at: "2026-01-01T00:00:00",
+          },
+          messages: [],
+        };
+      }
+      throw new Error("Session unavailable");
+    });
+    vi.mocked(backend.getSessionEvaluations).mockImplementation(async (sessionId: string) => {
+      if (sessionId === "sess-1") {
+        return {
+          session: {
+            id: "sess-1",
+            title: "Session One",
+            comparison_enabled: false,
+            session_state: null,
+            created_at: "2026-01-01T00:00:00",
+            updated_at: "2026-01-01T00:00:00",
+          },
+          evaluations: [
+            {
+              id: "e1",
+              session_id: "sess-1",
+              message_id: "m1",
+              query_type: "original_eval",
+              created_at: "2026-01-01T00:00:01",
+              response: standardResponse,
+            },
+          ],
+        };
+      }
+      throw new Error("Session unavailable");
+    });
+
+    renderApp("/app");
+    expect(await screen.findByTestId("assistant-answer")).toHaveTextContent("conditional greenlight");
+
+    fireEvent.click(screen.getByTestId("session-tab-sess-2"));
+
+    expect(await screen.findByText("Session unavailable")).toBeInTheDocument();
+    expect(screen.queryByTestId("assistant-answer")).not.toBeInTheDocument();
+    expect(screen.getByTestId("empty-response")).toBeInTheDocument();
+  });
+
+  it("logs out on auth-expired event from a 401 session refresh", async () => {
+    vi.mocked(backend.getStoredAuthSession).mockReturnValue(mockAuthSession);
+    vi.mocked(backend.listSessions).mockImplementation(async () => {
+      window.dispatchEvent(new Event("streamlogic-auth-expired"));
+      throw new Error("Request failed with status code 401");
+    });
+
+    renderApp("/app");
+    expect(await screen.findByTestId("login-submit")).toBeInTheDocument();
+    expect(backend.clearStoredAuthSession).toHaveBeenCalled();
+  });
 });

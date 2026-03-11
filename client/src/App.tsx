@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -39,6 +39,7 @@ import {
   type PersistedEvaluationRecord,
   type SessionSummary,
 } from "./lib/backend";
+import { AUTH_EXPIRED_EVENT } from "./lib/api";
 
 const QUERY_TYPE_OPTIONS: Array<{ value: QueryType; label: string }> = [
   { value: "original_eval", label: "Original Evaluation" },
@@ -344,6 +345,7 @@ function Workspace({ authSession, onLogout }: { authSession: AuthSession; onLogo
   const [queryType, setQueryType] = useState<QueryType>("original_eval");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const historyRequestRef = useRef(0);
 
   const activeResponse = useMemo(() => {
     if (evaluations.length === 0) {
@@ -376,20 +378,35 @@ function Workspace({ authSession, onLogout }: { authSession: AuthSession; onLogo
   }, []);
 
   const loadSessionHistory = useCallback(async (sessionId: string) => {
+    const requestId = ++historyRequestRef.current;
     setHistoryLoading(true);
     setHistoryError(null);
+    setMessages([]);
+    setEvaluations([]);
+    setActiveEvaluationId(null);
     try {
       const [messagesResponse, evaluationsResponse] = await Promise.all([
         getSessionMessages(sessionId),
         getSessionEvaluations(sessionId),
       ]);
+      if (requestId !== historyRequestRef.current) {
+        return;
+      }
       setMessages(messagesResponse.messages);
       setEvaluations(evaluationsResponse.evaluations);
       setActiveEvaluationId(evaluationsResponse.evaluations[0]?.id ?? null);
     } catch (err) {
+      if (requestId !== historyRequestRef.current) {
+        return;
+      }
+      setMessages([]);
+      setEvaluations([]);
+      setActiveEvaluationId(null);
       setHistoryError(err instanceof Error ? err.message : "Failed to load session history");
     } finally {
-      setHistoryLoading(false);
+      if (requestId === historyRequestRef.current) {
+        setHistoryLoading(false);
+      }
     }
   }, []);
 
@@ -402,6 +419,7 @@ function Workspace({ authSession, onLogout }: { authSession: AuthSession; onLogo
       setMessages([]);
       setEvaluations([]);
       setActiveEvaluationId(null);
+      setHistoryError(null);
       return;
     }
     void loadSessionHistory(activeSessionId);
@@ -687,10 +705,20 @@ function App() {
     setAuthSession(session);
   };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     clearStoredAuthSession();
     setAuthSession(null);
-  };
+  }, []);
+
+  useEffect(() => {
+    const onAuthExpired = () => {
+      handleLogout();
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
+    return () => {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
+    };
+  }, [handleLogout]);
 
   if (!hydrated) {
     return <LinearProgress />;
