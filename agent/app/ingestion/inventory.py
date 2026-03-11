@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import cast
 from uuid import NAMESPACE_URL, uuid5
 
 from agent.app.schemas.ingestion import (
@@ -25,7 +26,8 @@ def list_manifest_paths(raw_root: Path = RAW_DATA_ROOT) -> list[Path]:
 
 
 def load_manifest(manifest_path: Path) -> dict[str, object]:
-    return json.loads(manifest_path.read_text(encoding="utf-8"))
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    return cast(dict[str, object], payload)
 
 
 def build_ingestion_inventory(raw_root: Path = RAW_DATA_ROOT) -> IngestionInventory:
@@ -37,7 +39,7 @@ def build_ingestion_inventory(raw_root: Path = RAW_DATA_ROOT) -> IngestionInvent
         payload = load_manifest(manifest_path)
         content_id = str(payload["content_id"])
         title = str(payload["title"])
-        documents = payload.get("documents", [])
+        documents = cast(list[object], payload.get("documents", []))
         warnings: list[str] = []
         errors: list[str] = []
         normalized_docs: list[RawDocumentRegistration] = []

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from typing import Mapping, cast
 
 from sqlalchemy import Select, func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -30,28 +31,35 @@ class HybridRetriever:
             self._vector_search(query, filtered_ids, query_embedding),
         )
 
-        fts_ids = [item["section_id"] for item in fts_results]
-        vector_ids = [item["section_id"] for item in vector_results]
+        fts_ids = [self._as_str(item["section_id"]) for item in fts_results]
+        vector_ids = [self._as_str(item["section_id"]) for item in vector_results]
         weight_map = {
-            item["section_id"]: float(item["doc_type_weight"])
+            self._as_str(item["section_id"]): self._as_float(item["doc_type_weight"])
             for item in fts_results + vector_results
         }
         fusion_scores = reciprocal_rank_fusion([fts_ids, vector_ids], per_item_weight=weight_map)
 
         merged: dict[str, dict[str, object]] = {}
         for result in fts_results + vector_results:
-            current = merged.setdefault(result["section_id"], result.copy())
-            current["seen_methods"] = set(current.get("seen_methods", set())) | {result["retrieval_method"]}
-            current["method_score"] = max(
-                float(current.get("method_score", 0.0)),
-                float(result["method_score"]),
+            section_id = self._as_str(result["section_id"])
+            current = merged.setdefault(section_id, result.copy())
+            current_seen_methods = cast(
+                set[RetrievalMethod],
+                current.get("seen_methods", set()),
             )
-            current["fusion_score"] = fusion_scores.get(result["section_id"], 0.0)
+            current["seen_methods"] = current_seen_methods | {
+                cast(RetrievalMethod, result["retrieval_method"])
+            }
+            current["method_score"] = max(
+                self._as_float(current.get("method_score", 0.0)),
+                self._as_float(result["method_score"]),
+            )
+            current["fusion_score"] = fusion_scores.get(section_id, 0.0)
 
         reranked = rerank_candidates(list(merged.values()), limit=query.limit)
         output: list[RetrievalCandidate] = []
         for item in reranked:
-            methods = item["seen_methods"]
+            methods = cast(set[RetrievalMethod], item["seen_methods"])
             if len(methods) > 1:
                 retrieval_method = RetrievalMethod.HYBRID
             elif RetrievalMethod.FTS in methods:
@@ -63,7 +71,8 @@ class HybridRetriever:
                 1.0,
                 max(
                     0.05,
-                    float(item["fusion_score"]) * 25 + float(item["method_score"]) * 0.45,
+                    self._as_float(item["fusion_score"]) * 25
+                    + self._as_float(item["method_score"]) * 0.45,
                 ),
             )
             output.append(
@@ -133,7 +142,7 @@ class HybridRetriever:
         )
         async with self._session_factory() as session:
             rows = (await session.execute(stmt)).mappings().all()
-        return [self._normalize_result(row, RetrievalMethod.FTS, query) for row in rows]
+        return [self._normalize_result(dict(row), RetrievalMethod.FTS, query) for row in rows]
 
     async def _vector_search(
         self,
@@ -171,19 +180,19 @@ class HybridRetriever:
             score = cosine_similarity(query_embedding, [float(value) for value in embedding])
             if score <= 0:
                 continue
-            normalized = self._normalize_result(row, RetrievalMethod.VECTOR, query)
+            normalized = self._normalize_result(dict(row), RetrievalMethod.VECTOR, query)
             normalized["method_score"] = score
             scored.append(normalized)
-        scored.sort(key=lambda item: float(item["method_score"]), reverse=True)
+        scored.sort(key=lambda item: self._as_float(item["method_score"]), reverse=True)
         return scored[: query.limit * 3]
 
     def _normalize_result(
         self,
-        row: dict[str, object],
+        row: Mapping[str, object],
         method: RetrievalMethod,
         query: RetrievalQuery,
     ) -> dict[str, object]:
-        doc_type = DocumentType(str(row["document_type"]))
+        doc_type = DocumentType(self._as_str(row["document_type"]))
         return {
             "document_id": row["document_id"],
             "section_id": row["section_id"],
@@ -192,9 +201,19 @@ class HybridRetriever:
             "source_reference": row["source_reference"],
             "snippet": str(row["snippet"])[:280],
             "document_type": doc_type.value,
-            "structure_confidence": float(row["structure_confidence"]),
+            "structure_confidence": self._as_float(row["structure_confidence"]),
             "retrieval_method": method,
-            "method_score": float(row.get("method_score", 0.0)),
+            "method_score": self._as_float(row.get("method_score", 0.0)),
             "fusion_score": 0.0,
             "doc_type_weight": query.per_document_type_weight.get(doc_type, 1.0),
         }
+
+    def _as_str(self, value: object) -> str:
+        if isinstance(value, str):
+            return value
+        raise TypeError(f"Expected str, got {type(value)!r}")
+
+    def _as_float(self, value: object) -> float:
+        if isinstance(value, (int, float)):
+            return float(value)
+        raise TypeError(f"Expected float-compatible value, got {type(value)!r}")

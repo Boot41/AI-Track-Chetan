@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from agent.app.ingestion.classifiers import DocumentTypeClassifier
-from agent.app.ingestion.inventory import RAW_DATA_ROOT, build_ingestion_inventory
+from agent.app.ingestion.inventory import build_ingestion_inventory
 from agent.app.schemas.ingestion import DocumentType, SectioningHint
 
 
@@ -39,11 +39,7 @@ def test_manifest_sectioning_hints_are_valid() -> None:
         SectioningHint.REPORT_SECTION,
         SectioningHint.MEMO_SECTION,
     }
-    seen = {
-        document.sectioning_hint
-        for item in inventory.items
-        for document in item.documents
-    }
+    seen = {document.sectioning_hint for item in inventory.items for document in item.documents}
     assert seen <= allowed
 
 

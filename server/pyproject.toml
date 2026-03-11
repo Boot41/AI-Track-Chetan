@@ -48,6 +48,11 @@ python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
 exclude = ["alembic/"]
+mypy_path = [".."]
+
+[[tool.mypy.overrides]]
+module = ["asyncpg", "pgvector.sqlalchemy"]
+ignore_missing_imports = true
 
 [tool.importlinter]
 root_packages = ["app"]

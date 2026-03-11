@@ -3,6 +3,12 @@ from __future__ import annotations
 from collections import defaultdict
 
 
+def _as_float(value: object) -> float:
+    if isinstance(value, (int, float)):
+        return float(value)
+    raise TypeError(f"Expected numeric value, got {type(value)!r}")
+
+
 def reciprocal_rank_fusion(
     ranked_lists: list[list[str]],
     *,
@@ -25,9 +31,9 @@ def rerank_candidates(
     ranked = sorted(
         candidates,
         key=lambda candidate: (
-            float(candidate["fusion_score"]) * (0.5 + float(candidate["structure_confidence"])),
-            float(candidate["method_score"]) * (0.5 + float(candidate["structure_confidence"])),
-            float(candidate["structure_confidence"]),
+            _as_float(candidate["fusion_score"]) * (0.5 + _as_float(candidate["structure_confidence"])),
+            _as_float(candidate["method_score"]) * (0.5 + _as_float(candidate["structure_confidence"])),
+            _as_float(candidate["structure_confidence"]),
         ),
         reverse=True,
     )

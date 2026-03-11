@@ -18,7 +18,7 @@ else:
     PgVector = None
 
 
-class JsonVector(TypeDecorator):
+class JsonVector(TypeDecorator[object]):
     cache_ok = True
     impl = JSON
 

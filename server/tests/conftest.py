@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import os
+import sys
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
-import os
 from pathlib import Path
-import sys
 
 import jwt
 import pytest

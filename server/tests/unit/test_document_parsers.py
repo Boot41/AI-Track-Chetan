@@ -5,7 +5,13 @@ from pathlib import Path
 from agent.app.ingestion.classifiers import DocumentTypeClassifier
 from agent.app.ingestion.extractors import ContractFactExtractor, DocumentRiskExtractor
 from agent.app.ingestion.inventory import build_ingestion_inventory
-from agent.app.ingestion.parsers import ContractParser, DeckParser, ParserRouter, ReportParser, ScriptParser
+from agent.app.ingestion.parsers import (
+    ContractParser,
+    DeckParser,
+    ParserRouter,
+    ReportParser,
+    ScriptParser,
+)
 from agent.app.retrieval.ranking import reciprocal_rank_fusion, rerank_candidates
 from agent.app.schemas.ingestion import RetrievalMethod
 from agent.app.schemas.retrieval import RetrievalCandidate
@@ -65,7 +71,9 @@ def test_report_parser_sections_by_headings() -> None:
 def test_parser_fallback_uses_low_structure_chunks() -> None:
     registration = _registration("01_pitch_overview.md")
     classification = DocumentTypeClassifier().classify(registration)
-    parsed = ReportParser().parse(registration, classification, "single paragraph without markdown headings")
+    parsed = ReportParser().parse(
+        registration, classification, "single paragraph without markdown headings"
+    )
     assert parsed.fallback_applied is True
     assert parsed.sections[0].structure_confidence < 0.5
 
@@ -103,9 +111,24 @@ def test_rrf_and_reranking_respect_fusion_and_confidence() -> None:
     )
     ranked = rerank_candidates(
         [
-            {"section_id": "a", "fusion_score": scores["a"], "structure_confidence": 0.9, "method_score": 0.5},
-            {"section_id": "b", "fusion_score": scores["b"], "structure_confidence": 0.8, "method_score": 0.7},
-            {"section_id": "c", "fusion_score": scores["c"], "structure_confidence": 0.7, "method_score": 0.4},
+            {
+                "section_id": "a",
+                "fusion_score": scores["a"],
+                "structure_confidence": 0.9,
+                "method_score": 0.5,
+            },
+            {
+                "section_id": "b",
+                "fusion_score": scores["b"],
+                "structure_confidence": 0.8,
+                "method_score": 0.7,
+            },
+            {
+                "section_id": "c",
+                "fusion_score": scores["c"],
+                "structure_confidence": 0.7,
+                "method_score": 0.4,
+            },
         ],
         limit=2,
     )

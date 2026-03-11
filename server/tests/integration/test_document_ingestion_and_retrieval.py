@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import json
 
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-
 from agent.app.ingestion.service import DocumentIngestionService
-from agent.app.persistence.tables import document_facts, document_risks, document_sections, documents
+from agent.app.persistence.tables import (
+    document_facts,
+    document_risks,
+    document_sections,
+    documents,
+)
 from agent.app.retrieval.hybrid import HybridRetriever
 from agent.app.schemas.ingestion import DocumentType
 from agent.app.schemas.retrieval import RetrievalQuery
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
 async def test_full_ingestion_persists_documents_sections_facts_and_risks(
