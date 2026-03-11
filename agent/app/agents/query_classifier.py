@@ -53,6 +53,8 @@ class QueryClassifier:
             for token in ("compare", "versus", " vs ", "better investment")
         ):
             return QueryType.COMPARISON
+        if self._looks_like_narrative_deep_dive(message):
+            return QueryType.FOLLOWUP_WHY_NARRATIVE
         if self._looks_like_budget_scenario(message):
             return QueryType.SCENARIO_CHANGE_BUDGET
         if self._looks_like_localization_scenario(message):
@@ -67,13 +69,39 @@ class QueryClassifier:
             "licensing",
             "rights",
             "term sheet",
+            "contract",
+            "ip ownership",
+            "ownership",
+            "territory",
+            "territories",
+            "exclusivity",
+            "matching rights",
+            "spin-off",
+            "spinoff",
+            "sequel",
+            "prequel",
+            "collection",
+        )
+        acquisition_subject_signals = (
+            "red harbor",
+            "catalog",
+            "collection",
+            "global roi",
+            "roi model",
         )
         has_original_signal = any(token in message for token in original_signals)
         has_acquisition_signal = any(token in message for token in acquisition_signals)
+        has_acquisition_subject = any(
+            token in message for token in acquisition_subject_signals
+        )
 
         if has_original_signal:
             return QueryType.ORIGINAL_EVAL
-        if has_acquisition_signal or ("catalog" in message and not has_original_signal):
+        if (
+            has_acquisition_signal
+            or has_acquisition_subject
+            or ("catalog" in message and not has_original_signal)
+        ):
             return QueryType.ACQUISITION_EVAL
         return QueryType.GENERAL_QUESTION
 
@@ -140,6 +168,29 @@ class QueryClassifier:
 
     def _looks_like_followup(self, message: str) -> bool:
         return message.startswith("why") or "why " in message or "explain" in message
+
+    def _looks_like_narrative_deep_dive(self, message: str) -> bool:
+        prompt_verbs = (
+            "describe",
+            "summarize",
+            "analyse",
+            "analyze",
+            "break down",
+            "walk me through",
+            "tell me",
+        )
+        narrative_targets = (
+            "character arc",
+            "protagonist",
+            "narrative",
+            "theme",
+            "tone",
+            "pacing",
+            "pilot script",
+        )
+        return any(verb in message for verb in prompt_verbs) and any(
+            target in message for target in narrative_targets
+        )
 
     def _looks_like_budget_scenario(self, message: str) -> bool:
         return "budget" in message and bool(

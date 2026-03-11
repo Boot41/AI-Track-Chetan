@@ -8,10 +8,14 @@ from agent.app.formatters.scorecard_formatter import format_scorecard
 from agent.app.formatters.uncertainty_formatter import format_meta
 from agent.app.schemas.evaluation import (
     CatalogFitScore,
+    CharacterArcSignal,
     CompletionRateScore,
+    FranchiseAssessment,
+    NarrativeScoreInputs,
     RecommendationContribution,
     RecommendationOutcome,
     RecommendationResult,
+    RetrievalSourceReference,
     RiskScore,
     RiskSeverity,
     RoiScore,
@@ -20,6 +24,8 @@ from agent.app.schemas.ingestion import DocumentType, RetrievalMethod
 from agent.app.schemas.orchestration import (
     AgentTarget,
     EvidenceReference,
+    NarrativeAgentOutput,
+    NarrativeFeature,
     OrchestrationResult,
     QueryClassification,
     QueryType,
@@ -125,6 +131,59 @@ def test_scorecard_formatter_supports_followup_partial_updates() -> None:
     assert scorecard["focus_area"] == "roi"
     assert scorecard["recommendation"] == "CONDITIONAL"
     assert scorecard["estimated_roi"] == 1.2
+
+
+def test_response_formatter_narrative_followup_surfaces_character_arc_evidence() -> None:
+    result = _base_result(QueryType.FOLLOWUP_WHY_NARRATIVE)
+    result.narrative_output = NarrativeAgentOutput(
+        summary="narrative summary",
+        features=[
+            NarrativeFeature(
+                name="story_focus",
+                value="character-driven",
+                confidence=0.8,
+                rationale="test rationale",
+            )
+        ],
+        genre="cyber-noir thriller",
+        themes=["legacy", "identity"],
+        tone=["paranoid"],
+        pacing="fast",
+        character_arcs=[
+            CharacterArcSignal(
+                character_name="Elara Vance",
+                arc_summary="Transforms from institutional analyst into an off-grid insurgent.",
+                confidence=0.8,
+                source_references=[
+                    RetrievalSourceReference(
+                        document_id="doc-1",
+                        section_id="sec-1",
+                        source_reference="02_pilot_script.md#scene-3",
+                        retrieval_method=RetrievalMethod.HYBRID,
+                        confidence_score=0.9,
+                    )
+                ],
+            )
+        ],
+        franchise_potential=FranchiseAssessment(
+            level="high",
+            confidence=0.85,
+            rationale="franchise rationale",
+            source_references=[],
+        ),
+        narrative_red_flags=[],
+        score_inputs=NarrativeScoreInputs(
+            hook_strength=0.8,
+            pacing_strength=0.75,
+            character_strength=0.9,
+            franchise_strength=0.8,
+            red_flag_penalty=0.1,
+        ),
+        evidence=[],
+    )
+    payload = format_public_response(result)
+    assert "Elara Vance" in payload["answer"]
+    assert "02_pilot_script.md#scene-3" in payload["answer"]
 
 
 def test_response_formatter_comparison_keeps_stable_envelope() -> None:
