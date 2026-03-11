@@ -61,7 +61,7 @@ jobs:
         run: uv run pytest tests/integration -q
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/app_scaffold_test
-          SECRET_KEY: test-secret
+          SECRET_KEY: test-secret-key-with-sufficient-length-32b
           ENV: test
 
   frontend:

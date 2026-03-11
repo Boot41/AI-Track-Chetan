@@ -2,9 +2,15 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from logging import getLogger
-
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from agent.app.agents.interfaces import (
+    CatalogFitAgentInterface,
+    DocumentRetrievalAgentInterface,
+    NarrativeAnalysisAgentInterface,
+    RiskContractAnalysisAgentInterface,
+    RoiPredictionAgentInterface,
+)
 from agent.app.agents.query_classifier import QueryClassifier
 from agent.app.agents.routing import ROUTING_MATRIX
 from agent.app.agents.subagents import (
@@ -46,11 +52,11 @@ class AgentOrchestrator:
         self,
         session_factory: async_sessionmaker[AsyncSession],
         classifier: QueryClassifier | None = None,
-        document_agent: DocumentRetrievalAgent | None = None,
-        narrative_agent: NarrativeAnalysisAgent | None = None,
-        roi_agent: RoiPredictionAgent | None = None,
-        risk_agent: RiskContractAnalysisAgent | None = None,
-        catalog_agent: CatalogFitAgent | None = None,
+        document_agent: DocumentRetrievalAgentInterface | None = None,
+        narrative_agent: NarrativeAnalysisAgentInterface | None = None,
+        roi_agent: RoiPredictionAgentInterface | None = None,
+        risk_agent: RiskContractAnalysisAgentInterface | None = None,
+        catalog_agent: CatalogFitAgentInterface | None = None,
     ) -> None:
         provenance_tool = EvidencePackagingTool()
         hybrid_tool = HybridDocumentRetrievalTool(session_factory)
@@ -288,7 +294,13 @@ class AgentOrchestrator:
         session_state: SessionState,
         output_name: CachedOutputName,
     ) -> SessionAgentOutput | None:
-        return getattr(session_state, output_name.value)
+        output_map = {
+            CachedOutputName.NARRATIVE: session_state.narrative_output,
+            CachedOutputName.ROI: session_state.roi_output,
+            CachedOutputName.RISK: session_state.risk_output,
+            CachedOutputName.CATALOG: session_state.catalog_output,
+        }
+        return output_map[output_name]
 
     def _warnings_for_missing_outputs(
         self,
@@ -304,4 +316,7 @@ class AgentOrchestrator:
     def _to_session_output(self, value: object, generated_at: datetime) -> SessionAgentOutput | None:
         if value is None or not hasattr(value, "summary"):
             return None
-        return SessionAgentOutput(summary=str(getattr(value, "summary")), confidence=0.6, generated_at=generated_at)
+        summary = getattr(value, "summary")
+        if not isinstance(summary, str):
+            return None
+        return SessionAgentOutput(summary=summary, confidence=0.6, generated_at=generated_at)

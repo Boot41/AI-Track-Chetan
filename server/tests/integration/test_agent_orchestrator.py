@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import cast
 
 import pytest
-
+from agent.app.agents.interfaces import (
+    CatalogFitAgentInterface,
+    DocumentRetrievalAgentInterface,
+    NarrativeAnalysisAgentInterface,
+    RiskContractAnalysisAgentInterface,
+    RoiPredictionAgentInterface,
+)
 from agent.app.agents.orchestrator import AgentOrchestrator
+from agent.app.schemas.ingestion import RetrievalMethod
 from agent.app.schemas.orchestration import (
+    AgentExecutionContext,
     AgentRequest,
+    AgentTarget,
     CatalogAgentOutput,
     ComparisonOption,
     ComparisonState,
@@ -20,8 +30,8 @@ from agent.app.schemas.orchestration import (
     SessionState,
     TrustedRequestContext,
 )
-from agent.app.schemas.ingestion import RetrievalMethod
 from agent.app.schemas.retrieval import RetrievalCandidate
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
 def _request(message: str, session_state: SessionState | None = None) -> AgentRequest:
@@ -37,12 +47,12 @@ def _session_output(summary: str) -> SessionAgentOutput:
 
 
 @pytest.fixture
-def dummy_session_factory():  # type: ignore[no-untyped-def]
-    return object()
+def dummy_session_factory() -> async_sessionmaker[AsyncSession]:
+    return cast(async_sessionmaker[AsyncSession], object())
 
 
-class FakeDocumentAgent:
-    async def run(self, context):  # type: ignore[no-untyped-def]
+class FakeDocumentAgent(DocumentRetrievalAgentInterface):
+    async def run(self, context: AgentExecutionContext) -> RetrievalAgentOutput:
         candidate = RetrievalCandidate(
             document_id="doc-1",
             section_id="section-1",
@@ -64,34 +74,55 @@ class FakeDocumentAgent:
                     source_reference=candidate.source_reference,
                     retrieval_method=RetrievalMethod.HYBRID,
                     confidence_score=0.88,
-                    used_by_agent="document_retrieval",
+                    used_by_agent=AgentTarget.DOCUMENT_RETRIEVAL,
                     claim_it_supports="retrieval",
                 )
             ],
         )
 
 
-class FakeNarrativeAgent:
-    async def run(self, context, retrieval_output):  # type: ignore[no-untyped-def]
+class FakeNarrativeAgent(NarrativeAnalysisAgentInterface):
+    async def run(
+        self,
+        context: AgentExecutionContext,
+        retrieval_output: RetrievalAgentOutput | None,
+    ) -> NarrativeAgentOutput:
         return NarrativeAgentOutput(summary="Narrative output", features=[], evidence=[])
 
 
-class FakeRoiAgent:
-    async def run(self, context, retrieval_output, narrative_output):  # type: ignore[no-untyped-def]
-        return RoiAgentOutput(summary="ROI output", assumptions=["budget stable"], metrics=[], evidence=[])
+class FakeRoiAgent(RoiPredictionAgentInterface):
+    async def run(
+        self,
+        context: AgentExecutionContext,
+        retrieval_output: RetrievalAgentOutput | None,
+        narrative_output: NarrativeAgentOutput | None,
+    ) -> RoiAgentOutput:
+        return RoiAgentOutput(
+            summary="ROI output", assumptions=["budget stable"], metrics=[], evidence=[]
+        )
 
 
-class FakeRiskAgent:
-    async def run(self, context, retrieval_output):  # type: ignore[no-untyped-def]
+class FakeRiskAgent(RiskContractAnalysisAgentInterface):
+    async def run(
+        self,
+        context: AgentExecutionContext,
+        retrieval_output: RetrievalAgentOutput | None,
+    ) -> RiskAgentOutput:
         return RiskAgentOutput(summary="Risk output", clauses=[], evidence=[])
 
 
-class FakeCatalogAgent:
-    async def run(self, context, retrieval_output):  # type: ignore[no-untyped-def]
+class FakeCatalogAgent(CatalogFitAgentInterface):
+    async def run(
+        self,
+        context: AgentExecutionContext,
+        retrieval_output: RetrievalAgentOutput | None,
+    ) -> CatalogAgentOutput:
         return CatalogAgentOutput(summary="Catalog output", signals=["gap"], evidence=[])
 
 
-async def test_query_type_maps_to_expected_subagents(dummy_session_factory) -> None:
+async def test_query_type_maps_to_expected_subagents(
+    dummy_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
     orchestrator = AgentOrchestrator(
         dummy_session_factory,
         document_agent=FakeDocumentAgent(),
@@ -112,7 +143,9 @@ async def test_query_type_maps_to_expected_subagents(dummy_session_factory) -> N
     ]
 
 
-async def test_followup_routing_reuses_cached_outputs(dummy_session_factory) -> None:
+async def test_followup_routing_reuses_cached_outputs(
+    dummy_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
     orchestrator = AgentOrchestrator(
         dummy_session_factory,
         document_agent=FakeDocumentAgent(),
@@ -125,10 +158,14 @@ async def test_followup_routing_reuses_cached_outputs(dummy_session_factory) -> 
 
     result = await orchestrator.orchestrate(_request("Why is the ROI low?", state))
     assert result.classification.query_type == QueryType.FOLLOWUP_WHY_ROI
-    assert [item.target.value for item in result.invoked_agents if item.cached] == ["roi_prediction"]
+    assert [item.target.value for item in result.invoked_agents if item.cached] == [
+        "roi_prediction"
+    ]
 
 
-async def test_scenario_change_routing_recomputes_downstream_dependencies(dummy_session_factory) -> None:
+async def test_scenario_change_routing_recomputes_downstream_dependencies(
+    dummy_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
     orchestrator = AgentOrchestrator(
         dummy_session_factory,
         document_agent=FakeDocumentAgent(),
@@ -151,7 +188,9 @@ async def test_scenario_change_routing_recomputes_downstream_dependencies(dummy_
     assert [handoff.target.value for handoff in result.handoffs] == ["recommendation_engine"]
 
 
-async def test_comparison_targeting_preserves_active_option(dummy_session_factory) -> None:
+async def test_comparison_targeting_preserves_active_option(
+    dummy_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
     orchestrator = AgentOrchestrator(
         dummy_session_factory,
         document_agent=FakeDocumentAgent(),
@@ -162,7 +201,9 @@ async def test_comparison_targeting_preserves_active_option(dummy_session_factor
     )
     state = SessionState(
         comparison_state=ComparisonState(
-            option_a=ComparisonOption(option_id="option-a", label="Neon Shore", query_type=QueryType.ORIGINAL_EVAL),
+            option_a=ComparisonOption(
+                option_id="option-a", label="Neon Shore", query_type=QueryType.ORIGINAL_EVAL
+            ),
             option_b=ComparisonOption(
                 option_id="option-b",
                 label="Red Harbor Catalog",
@@ -174,12 +215,16 @@ async def test_comparison_targeting_preserves_active_option(dummy_session_factor
         catalog_output=_session_output("cached catalog"),
     )
 
-    result = await orchestrator.orchestrate(_request("Why does option B fit our catalog better?", state))
+    result = await orchestrator.orchestrate(
+        _request("Why does option B fit our catalog better?", state)
+    )
     assert result.active_option_id == "option-b"
     assert result.classification.query_type == QueryType.FOLLOWUP_WHY_CATALOG
 
 
-async def test_orchestrator_uses_mocked_subagents_and_updates_session_state(dummy_session_factory) -> None:
+async def test_orchestrator_uses_mocked_subagents_and_updates_session_state(
+    dummy_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
     orchestrator = AgentOrchestrator(
         dummy_session_factory,
         document_agent=FakeDocumentAgent(),
@@ -198,7 +243,9 @@ async def test_orchestrator_uses_mocked_subagents_and_updates_session_state(dumm
     assert state.query_type == QueryType.ACQUISITION_EVAL
 
 
-async def test_orchestrator_recomputes_when_followup_cache_missing(dummy_session_factory) -> None:
+async def test_orchestrator_recomputes_when_followup_cache_missing(
+    dummy_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
     orchestrator = AgentOrchestrator(
         dummy_session_factory,
         document_agent=FakeDocumentAgent(),

@@ -14,7 +14,7 @@ class NarrativeFeatureExtractionTool:
         request = NarrativeFeatureExtractionRequest.model_validate(request)
         joined_text = " ".join(candidate.snippet.lower() for candidate in request.sections)
 
-        theme_terms = Counter()
+        theme_terms: Counter[str] = Counter()
         for token in ("thriller", "mystery", "crime", "family", "romance", "comedy", "drama"):
             if token in joined_text:
                 theme_terms[token] += joined_text.count(token)
