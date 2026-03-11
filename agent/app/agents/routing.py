@@ -62,6 +62,7 @@ ROUTING_MATRIX: dict[QueryType, RouteDefinition] = {
         query_type=QueryType.FOLLOWUP_WHY_NARRATIVE,
         target_agents=[AgentTarget.NARRATIVE_ANALYSIS],
         reusable_outputs=[CachedOutputName.NARRATIVE],
+        recompute_outputs=[CachedOutputName.NARRATIVE],
     ),
     QueryType.FOLLOWUP_WHY_ROI: RouteDefinition(
         query_type=QueryType.FOLLOWUP_WHY_ROI,
@@ -108,4 +109,3 @@ ROUTING_MATRIX: dict[QueryType, RouteDefinition] = {
         target_agents=[AgentTarget.DOCUMENT_RETRIEVAL],
     ),
 }
-

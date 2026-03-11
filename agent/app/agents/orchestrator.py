@@ -61,17 +61,23 @@ class AgentOrchestrator:
         provenance_tool = EvidencePackagingTool()
         hybrid_tool = HybridDocumentRetrievalTool(session_factory)
         self._classifier = classifier or QueryClassifier()
-        self._document_agent = document_agent or DocumentRetrievalAgent(hybrid_tool, provenance_tool)
+        self._document_agent = document_agent or DocumentRetrievalAgent(
+            hybrid_tool, provenance_tool
+        )
         self._narrative_agent = narrative_agent or NarrativeAnalysisAgent(
             NarrativeFeatureExtractionTool(),
             provenance_tool,
         )
-        self._roi_agent = roi_agent or RoiPredictionAgent(SqlRetrievalTool(), provenance_tool)
+        self._roi_agent = roi_agent or RoiPredictionAgent(
+            SqlRetrievalTool(), provenance_tool
+        )
         self._risk_agent = risk_agent or RiskContractAnalysisAgent(
             ClauseExtractionTool(session_factory),
             provenance_tool,
         )
-        self._catalog_agent = catalog_agent or CatalogFitAgent(hybrid_tool, provenance_tool)
+        self._catalog_agent = catalog_agent or CatalogFitAgent(
+            hybrid_tool, provenance_tool
+        )
 
     async def orchestrate(self, request: AgentRequest) -> OrchestrationResult:
         request = AgentRequest.model_validate(request)
@@ -93,7 +99,9 @@ class AgentOrchestrator:
             classification=classification,
             route_plan=route_plan,
             active_option_id=route_plan.active_option_id,
-            comparison_option_ids=[option.option_id for option in context.comparison_options],
+            comparison_option_ids=[
+                option.option_id for option in context.comparison_options
+            ],
         )
 
         if self._needs_document_prefetch(classification.query_type):
@@ -123,7 +131,10 @@ class AgentOrchestrator:
                     ]
                 )
             elif target == AgentTarget.NARRATIVE_ANALYSIS:
-                if CachedOutputName.NARRATIVE in route_plan.cached_outputs_to_use and session_state.narrative_output:
+                if (
+                    CachedOutputName.NARRATIVE in route_plan.cached_outputs_to_use
+                    and session_state.narrative_output
+                ):
                     result.invoked_agents.append(
                         AgentInvocation(
                             target=target,
@@ -132,16 +143,23 @@ class AgentOrchestrator:
                         )
                     )
                 else:
-                    result.narrative_output = await self._narrative_agent.run(context, result.retrieval_output)
+                    result.narrative_output = await self._narrative_agent.run(
+                        context, result.retrieval_output
+                    )
                     result.invoked_agents.append(AgentInvocation(target=target))
                     result.invoked_tools.extend(
                         [
-                            ToolInvocation(tool_name=ToolName.NARRATIVE_FEATURE_EXTRACTION),
+                            ToolInvocation(
+                                tool_name=ToolName.NARRATIVE_FEATURE_EXTRACTION
+                            ),
                             ToolInvocation(tool_name=ToolName.EVIDENCE_PACKAGING),
                         ]
                     )
             elif target == AgentTarget.ROI_PREDICTION:
-                if CachedOutputName.ROI in route_plan.cached_outputs_to_use and session_state.roi_output:
+                if (
+                    CachedOutputName.ROI in route_plan.cached_outputs_to_use
+                    and session_state.roi_output
+                ):
                     result.invoked_agents.append(
                         AgentInvocation(
                             target=target,
@@ -163,7 +181,10 @@ class AgentOrchestrator:
                         ]
                     )
             elif target == AgentTarget.RISK_CONTRACT_ANALYSIS:
-                if CachedOutputName.RISK in route_plan.cached_outputs_to_use and session_state.risk_output:
+                if (
+                    CachedOutputName.RISK in route_plan.cached_outputs_to_use
+                    and session_state.risk_output
+                ):
                     result.invoked_agents.append(
                         AgentInvocation(
                             target=target,
@@ -172,7 +193,9 @@ class AgentOrchestrator:
                         )
                     )
                 else:
-                    result.risk_output = await self._risk_agent.run(context, result.retrieval_output)
+                    result.risk_output = await self._risk_agent.run(
+                        context, result.retrieval_output
+                    )
                     result.invoked_agents.append(AgentInvocation(target=target))
                     result.invoked_tools.extend(
                         [
@@ -181,7 +204,10 @@ class AgentOrchestrator:
                         ]
                     )
             elif target == AgentTarget.CATALOG_FIT:
-                if CachedOutputName.CATALOG in route_plan.cached_outputs_to_use and session_state.catalog_output:
+                if (
+                    CachedOutputName.CATALOG in route_plan.cached_outputs_to_use
+                    and session_state.catalog_output
+                ):
                     result.invoked_agents.append(
                         AgentInvocation(
                             target=target,
@@ -190,15 +216,22 @@ class AgentOrchestrator:
                         )
                     )
                 else:
-                    result.catalog_output = await self._catalog_agent.run(context, result.retrieval_output)
+                    result.catalog_output = await self._catalog_agent.run(
+                        context, result.retrieval_output
+                    )
                     result.invoked_agents.append(AgentInvocation(target=target))
                     result.invoked_tools.extend(
                         [
-                            ToolInvocation(tool_name=ToolName.HYBRID_DOCUMENT_RETRIEVAL),
+                            ToolInvocation(
+                                tool_name=ToolName.HYBRID_DOCUMENT_RETRIEVAL
+                            ),
                             ToolInvocation(tool_name=ToolName.EVIDENCE_PACKAGING),
                         ]
                     )
-            elif target in {AgentTarget.RECOMMENDATION_ENGINE, AgentTarget.COMPARISON_SYNTHESIS}:
+            elif target in {
+                AgentTarget.RECOMMENDATION_ENGINE,
+                AgentTarget.COMPARISON_SYNTHESIS,
+            }:
                 dependencies = [
                     invocation.target
                     for invocation in result.invoked_agents
@@ -211,21 +244,33 @@ class AgentOrchestrator:
                         dependencies=dependencies,
                     )
                 )
-                result.invoked_agents.append(AgentInvocation(target=target, details={"handoff_only": True}))
+                result.invoked_agents.append(
+                    AgentInvocation(target=target, details={"handoff_only": True})
+                )
 
-        result.warnings.extend(self._warnings_for_missing_outputs(session_state, route_plan))
+        result.warnings.extend(
+            self._warnings_for_missing_outputs(session_state, route_plan)
+        )
         logger.info(
             "orchestrator_summary=%s",
             {
-                "subagents_invoked": [item.target.value for item in result.invoked_agents],
-                "tools_invoked": [item.tool_name.value for item in result.invoked_tools],
-                "cache_reuse": [item.target.value for item in result.invoked_agents if item.cached],
+                "subagents_invoked": [
+                    item.target.value for item in result.invoked_agents
+                ],
+                "tools_invoked": [
+                    item.tool_name.value for item in result.invoked_tools
+                ],
+                "cache_reuse": [
+                    item.target.value for item in result.invoked_agents if item.cached
+                ],
                 "recomputed": [item.value for item in route_plan.outputs_to_recompute],
             },
         )
         return result
 
-    def build_route_plan(self, query_type: QueryType, session_state: SessionState | None) -> RoutePlan:
+    def build_route_plan(
+        self, query_type: QueryType, session_state: SessionState | None
+    ) -> RoutePlan:
         session_state = session_state or SessionState()
         route = ROUTING_MATRIX[query_type]
         cached_outputs_to_use = [
@@ -234,11 +279,25 @@ class AgentOrchestrator:
             if self._session_output(session_state, output_name) is not None
         ]
         outputs_to_recompute = list(route.recompute_outputs)
-        if query_type == QueryType.FOLLOWUP_WHY_ROI and session_state.roi_output is not None:
+        if (
+            query_type == QueryType.FOLLOWUP_WHY_NARRATIVE
+            and session_state.narrative_output is not None
+        ):
             outputs_to_recompute = []
-        if query_type == QueryType.FOLLOWUP_WHY_RISK and session_state.risk_output is not None:
+        if (
+            query_type == QueryType.FOLLOWUP_WHY_ROI
+            and session_state.roi_output is not None
+        ):
             outputs_to_recompute = []
-        if query_type == QueryType.FOLLOWUP_WHY_CATALOG and session_state.catalog_output is not None:
+        if (
+            query_type == QueryType.FOLLOWUP_WHY_RISK
+            and session_state.risk_output is not None
+        ):
+            outputs_to_recompute = []
+        if (
+            query_type == QueryType.FOLLOWUP_WHY_CATALOG
+            and session_state.catalog_output is not None
+        ):
             outputs_to_recompute = []
 
         return RoutePlan(
@@ -248,37 +307,57 @@ class AgentOrchestrator:
             outputs_to_recompute=outputs_to_recompute,
             active_option_id=self.resolve_active_option(query_type, session_state),
             evaluate_all_comparison_options=query_type == QueryType.COMPARISON,
-            support_agents=[AgentTarget.DOCUMENT_RETRIEVAL] if self._needs_document_prefetch(query_type) else [],
+            support_agents=[AgentTarget.DOCUMENT_RETRIEVAL]
+            if self._needs_document_prefetch(query_type)
+            else [],
         )
 
-    def resolve_active_option(self, query_type: QueryType, session_state: SessionState | None) -> str | None:
+    def resolve_active_option(
+        self, query_type: QueryType, session_state: SessionState | None
+    ) -> str | None:
         if session_state is None or session_state.comparison_state is None:
             return None
         if query_type == QueryType.COMPARISON:
             return session_state.comparison_state.active_option
-        return session_state.active_option or session_state.comparison_state.active_option
+        return (
+            session_state.active_option or session_state.comparison_state.active_option
+        )
 
-    def update_session_state(self, state: SessionState | None, result: OrchestrationResult) -> SessionState:
+    def update_session_state(
+        self, state: SessionState | None, result: OrchestrationResult
+    ) -> SessionState:
         current = state or SessionState()
         now = datetime.now(UTC)
+        retrieval_context = list(current.retrieval_context)
+        retrieval_context.extend(
+            candidate.section_id
+            for candidate in (
+                result.retrieval_output.raw_candidates
+                if result.retrieval_output is not None
+                else []
+            )
+        )
         return current.model_copy(
             update={
                 "query_type": result.classification.query_type,
-                "narrative_output": self._to_session_output(result.narrative_output, now)
+                "narrative_output": self._to_session_output(
+                    result.narrative_output, now
+                )
                 or current.narrative_output,
-                "roi_output": self._to_session_output(result.roi_output, now) or current.roi_output,
-                "risk_output": self._to_session_output(result.risk_output, now) or current.risk_output,
+                "roi_output": self._to_session_output(result.roi_output, now)
+                or current.roi_output,
+                "risk_output": self._to_session_output(result.risk_output, now)
+                or current.risk_output,
                 "catalog_output": self._to_session_output(result.catalog_output, now)
                 or current.catalog_output,
                 "active_option": result.active_option_id,
-                "retrieval_context": [
-                    *(current.retrieval_context or []),
-                    *(candidate.section_id for candidate in (result.retrieval_output.raw_candidates if result.retrieval_output else [])),
-                ],
+                "retrieval_context": retrieval_context,
             }
         )
 
-    def _comparison_options(self, session_state: SessionState) -> list[ComparisonOption]:
+    def _comparison_options(
+        self, session_state: SessionState
+    ) -> list[ComparisonOption]:
         if session_state.comparison_state is None:
             return []
         return [
@@ -310,13 +389,19 @@ class AgentOrchestrator:
         warnings: list[str] = []
         for output_name in route_plan.cached_outputs_to_use:
             if self._session_output(session_state, output_name) is None:
-                warnings.append(f"Requested cached output {output_name.value} was unavailable.")
+                warnings.append(
+                    f"Requested cached output {output_name.value} was unavailable."
+                )
         return warnings
 
-    def _to_session_output(self, value: object, generated_at: datetime) -> SessionAgentOutput | None:
+    def _to_session_output(
+        self, value: object, generated_at: datetime
+    ) -> SessionAgentOutput | None:
         if value is None or not hasattr(value, "summary"):
             return None
         summary = getattr(value, "summary")
         if not isinstance(summary, str):
             return None
-        return SessionAgentOutput(summary=summary, confidence=0.6, generated_at=generated_at)
+        return SessionAgentOutput(
+            summary=summary, confidence=0.6, generated_at=generated_at
+        )

@@ -33,6 +33,7 @@ from agent.app.schemas.retrieval import RetrievalCandidate
 from agent.app.tools.narrative_feature_extraction import NarrativeFeatureExtractionTool
 from agent.app.tools.provenance import EvidencePackagingTool
 from agent.app.tools.sql_retrieval import SqlRetrievalTool
+from agent.my_agent.agent import orchestrate_query, root_agent
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 FIXTURE_PATH = (
@@ -76,6 +77,21 @@ def test_query_classifier_uses_session_context_for_ambiguous_followup() -> None:
     assert classification.query_type == QueryType.FOLLOWUP_WHY_RISK
 
 
+def test_query_classifier_prioritizes_original_eval_when_original_signals_are_explicit() -> None:
+    classifier = QueryClassifier()
+    classification = classifier.classify(
+        "Should we greenlight this original series for our catalog?"
+    )
+    assert classification.query_type == QueryType.ORIGINAL_EVAL
+
+
+def test_query_classifier_marks_narrative_followup_for_recompute_when_cache_is_missing() -> None:
+    classifier = QueryClassifier()
+    classification = classifier.classify("Why is the narrative score low?")
+    assert classification.query_type == QueryType.FOLLOWUP_WHY_NARRATIVE
+    assert classification.requires_recomputation is True
+
+
 def test_routing_matrix_encodes_documented_defaults() -> None:
     assert ROUTING_MATRIX[QueryType.ORIGINAL_EVAL].target_agents == [
         AgentTarget.NARRATIVE_ANALYSIS,
@@ -100,6 +116,18 @@ def test_session_state_reuse_decision_prefers_cached_followup_outputs(
         SessionState(roi_output=_cached_output("Cached ROI output")),
     )
     assert route.cached_outputs_to_use == [CachedOutputName.ROI]
+    assert route.outputs_to_recompute == []
+
+
+def test_session_state_reuse_decision_clears_narrative_recompute_when_cache_exists(
+    dummy_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    orchestrator = AgentOrchestrator(dummy_session_factory)
+    route = orchestrator.build_route_plan(
+        QueryType.FOLLOWUP_WHY_NARRATIVE,
+        SessionState(narrative_output=_cached_output("Cached narrative output")),
+    )
+    assert route.cached_outputs_to_use == [CachedOutputName.NARRATIVE]
     assert route.outputs_to_recompute == []
 
 
@@ -171,6 +199,11 @@ def test_typed_subagent_interfaces_are_explicit(
     assert isinstance(orchestrator._roi_agent, RoiPredictionAgent)
     assert isinstance(orchestrator._risk_agent, RiskContractAnalysisAgent)
     assert isinstance(orchestrator._catalog_agent, CatalogFitAgent)
+
+
+def test_adk_root_agent_exposes_orchestrator_tool() -> None:
+    assert root_agent.tools
+    assert orchestrate_query in root_agent.tools
 
 
 def test_backend_routing_glue_matches_agent_routing_spec() -> None:
