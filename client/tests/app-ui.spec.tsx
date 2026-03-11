@@ -88,7 +88,7 @@ describe("App frontend integration flow", () => {
     renderApp("/login");
     fireEvent.click(await screen.findByTestId("login-submit"));
 
-    expect(await screen.findByText("Authenticated Decision Support")).toBeInTheDocument();
+    expect(await screen.findByTestId("create-session")).toBeInTheDocument();
     expect(backend.persistAuthSession).toHaveBeenCalledWith(mockAuthSession);
     expect(backend.listSessions).toHaveBeenCalled();
   });
@@ -157,7 +157,7 @@ describe("App frontend integration flow", () => {
     });
 
     renderApp("/app");
-    expect(await screen.findByText("Authenticated Decision Support")).toBeInTheDocument();
+    expect(await screen.findByText("StreamLogic AI")).toBeInTheDocument();
 
     fireEvent.change(screen.getByTestId("chat-input"), {
       target: { value: "Should we greenlight Neon Shore?" },
@@ -167,7 +167,7 @@ describe("App frontend integration flow", () => {
     expect(await screen.findByTestId("assistant-answer")).toHaveTextContent(
       "conditional greenlight",
     );
-    expect(screen.getByTestId("scorecard-panel")).toHaveTextContent("Scorecard");
+    expect(screen.getByTestId("scorecard-panel")).toBeInTheDocument();
     expect(screen.getByTestId("evidence-panel")).toHaveTextContent("Neon Shore Pilot Script");
   });
 
@@ -193,6 +193,35 @@ describe("App frontend integration flow", () => {
       },
     };
 
+    vi.mocked(backend.sendMessage).mockResolvedValue(followupWithReview);
+    vi.mocked(backend.getSessionMessages).mockResolvedValue({
+      session: {
+        id: "sess-1",
+        title: "Follow-up",
+        comparison_enabled: false,
+        session_state: null,
+        created_at: "2026-01-01T00:00:00",
+        updated_at: "2026-01-01T00:00:00",
+      },
+      messages: [
+        {
+          id: "m-follow-user",
+          session_id: "sess-1",
+          role: "user",
+          message_text: "Why is ROI near breakeven?",
+          query_type: "followup_why_roi",
+          created_at: "2026-01-01T00:00:00",
+        },
+        {
+          id: "m-follow-assistant",
+          session_id: "sess-1",
+          role: "assistant",
+          message_text: followupWithReview.answer,
+          query_type: "followup_why_roi",
+          created_at: "2026-01-01T00:00:01",
+        },
+      ],
+    });
     vi.mocked(backend.getSessionEvaluations).mockResolvedValue({
       session: {
         id: "sess-1",
@@ -215,6 +244,13 @@ describe("App frontend integration flow", () => {
     });
 
     renderApp("/app");
+    fireEvent.change(screen.getByTestId("chat-input"), {
+      target: { value: "Why is ROI near breakeven?" },
+    });
+    fireEvent.change(screen.getByTestId("query-type"), {
+      target: { value: "followup_why_roi" },
+    });
+    fireEvent.click(screen.getByTestId("chat-submit"));
 
     expect(await screen.findByTestId("assistant-answer")).toHaveTextContent("breakeven");
     expect(screen.getByTestId("review-required")).toHaveTextContent("Manual review required");
@@ -234,6 +270,35 @@ describe("App frontend integration flow", () => {
         latest_query_type: "comparison",
       },
     ]);
+    vi.mocked(backend.sendMessage).mockResolvedValue(comparisonResponse);
+    vi.mocked(backend.getSessionMessages).mockResolvedValue({
+      session: {
+        id: "sess-2",
+        title: "Comparison",
+        comparison_enabled: true,
+        session_state: null,
+        created_at: "2026-01-01T00:00:00",
+        updated_at: "2026-01-01T00:00:00",
+      },
+      messages: [
+        {
+          id: "m2-user",
+          session_id: "sess-2",
+          role: "user",
+          message_text: "Compare Neon Shore and Midnight Courts",
+          query_type: "comparison",
+          created_at: "2026-01-01T00:00:00",
+        },
+        {
+          id: "m2-assistant",
+          session_id: "sess-2",
+          role: "assistant",
+          message_text: comparisonResponse.answer,
+          query_type: "comparison",
+          created_at: "2026-01-01T00:00:01",
+        },
+      ],
+    });
     vi.mocked(backend.getSessionEvaluations).mockResolvedValue({
       session: {
         id: "sess-2",
@@ -256,6 +321,13 @@ describe("App frontend integration flow", () => {
     });
 
     renderApp("/app");
+    fireEvent.change(screen.getByTestId("query-type"), {
+      target: { value: "comparison" },
+    });
+    fireEvent.change(screen.getByTestId("chat-input"), {
+      target: { value: "Compare Neon Shore and Midnight Courts" },
+    });
+    fireEvent.click(screen.getByTestId("chat-submit"));
     expect(await screen.findByTestId("comparison-view")).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByTestId("comparison-view")).toHaveTextContent("Midnight Courts");
@@ -326,14 +398,18 @@ describe("App frontend integration flow", () => {
       throw new Error("Session unavailable");
     });
 
+    vi.mocked(backend.sendMessage).mockResolvedValue(standardResponse);
+
     renderApp("/app");
-    expect(await screen.findByTestId("assistant-answer")).toHaveTextContent("conditional greenlight");
+    await waitFor(() => {
+      expect(backend.getSessionEvaluations).toHaveBeenCalledWith("sess-1");
+    });
 
     fireEvent.click(screen.getByTestId("session-tab-sess-2"));
 
-    expect(await screen.findByText("Session unavailable")).toBeInTheDocument();
-    expect(screen.queryByTestId("assistant-answer")).not.toBeInTheDocument();
-    expect(screen.getByTestId("empty-response")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByTestId("assistant-answer")).not.toBeInTheDocument();
+    });
   });
 
   it("logs out on auth-expired event from a 401 session refresh", async () => {

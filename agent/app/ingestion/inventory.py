@@ -34,11 +34,20 @@ def build_ingestion_inventory(raw_root: Path = RAW_DATA_ROOT) -> IngestionInvent
     items: list[IngestionInventoryItem] = []
     inventory_warnings: list[str] = []
     inventory_errors: list[str] = []
+    manifest_paths = list_manifest_paths(raw_root)
 
-    for manifest_path in list_manifest_paths(raw_root):
+    for manifest_path in manifest_paths:
         payload = load_manifest(manifest_path)
-        content_id = str(payload["content_id"])
-        title = str(payload["title"])
+        content_id_raw = payload.get("content_id")
+        title_raw = payload.get("title")
+        if not isinstance(content_id_raw, str) or not content_id_raw.strip():
+            inventory_errors.append(f"{manifest_path} is missing a valid content_id")
+            continue
+        if not isinstance(title_raw, str) or not title_raw.strip():
+            inventory_errors.append(f"{manifest_path} is missing a valid title")
+            continue
+        content_id = content_id_raw
+        title = title_raw
         documents = cast(list[object], payload.get("documents", []))
         warnings: list[str] = []
         errors: list[str] = []
@@ -67,7 +76,14 @@ def build_ingestion_inventory(raw_root: Path = RAW_DATA_ROOT) -> IngestionInvent
                 errors.append(f"{filename} listed in manifest but file is missing")
                 continue
 
-            sectioning_hint = SectioningHint(str(entry["sectioning_hint"]))
+            sectioning_hint_raw = str(entry["sectioning_hint"])
+            try:
+                sectioning_hint = SectioningHint(sectioning_hint_raw)
+            except ValueError:
+                errors.append(
+                    f"{filename} has invalid sectioning_hint={sectioning_hint_raw!r}"
+                )
+                continue
             normalized_docs.append(
                 RawDocumentRegistration(
                     document_id=_document_id(content_id, filename),
@@ -85,19 +101,26 @@ def build_ingestion_inventory(raw_root: Path = RAW_DATA_ROOT) -> IngestionInvent
                 )
             )
 
-        items.append(
-            IngestionInventoryItem(
-                content_id=content_id,
-                title=title,
-                manifest_path=str(manifest_path),
-                document_count=len(normalized_docs),
-                documents=normalized_docs,
-                warnings=warnings,
-                errors=errors,
+        if normalized_docs:
+            items.append(
+                IngestionInventoryItem(
+                    content_id=content_id,
+                    title=title,
+                    manifest_path=str(manifest_path),
+                    document_count=len(normalized_docs),
+                    documents=normalized_docs,
+                    warnings=warnings,
+                    errors=errors,
+                )
             )
-        )
+        else:
+            inventory_errors.append(
+                f"{manifest_path} has no valid document registrations after validation"
+            )
+            inventory_warnings.extend(warnings)
+            inventory_errors.extend(errors)
 
-    if not items:
+    if not items and not manifest_paths:
         inventory_errors.append("No manifest.json files found under data/raw")
 
     comparison_dir = raw_root / "comparison_cases"

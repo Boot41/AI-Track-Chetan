@@ -70,6 +70,18 @@ function adaptResponseForQueryType(queryType) {
   if (queryType === "comparison") {
     return structuredClone(comparisonResponse);
   }
+  if (queryType === "general_question") {
+    const payload = structuredClone(followupResponse);
+    payload.scorecard.scorecard_type = "followup";
+    payload.scorecard.query_type = "general_question";
+    payload.meta.review_required = true;
+    payload.meta.confidence = 0.31;
+    payload.meta.warnings = [
+      "Supporting evidence confidence is low.",
+      "No supporting evidence was retrieved for this response.",
+    ];
+    return payload;
+  }
   if (queryType && queryType.startsWith("followup_")) {
     const payload = structuredClone(followupResponse);
     payload.scorecard.query_type = queryType;

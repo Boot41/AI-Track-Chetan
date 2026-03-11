@@ -22,6 +22,7 @@ from agent.app.agents.subagents import (
     RiskContractAnalysisAgent,
     RoiPredictionAgent,
 )
+from agent.app.operations import OperationalDataWorkflow
 from agent.app.scorers import (
     CatalogFitScorer,
     CompletionRateScorer,
@@ -79,6 +80,7 @@ class AgentOrchestrator:
     ) -> None:
         provenance_tool = EvidencePackagingTool()
         hybrid_tool = HybridDocumentRetrievalTool(session_factory)
+        self._operational_workflow = OperationalDataWorkflow(session_factory)
         self._classifier = classifier or QueryClassifier()
         self._document_agent = document_agent or DocumentRetrievalAgent(
             hybrid_tool, provenance_tool
@@ -104,8 +106,20 @@ class AgentOrchestrator:
         self._recommendation_engine = recommendation_engine or RecommendationEngine()
 
     async def orchestrate(self, request: AgentRequest) -> OrchestrationResult:
-        request = AgentRequest.model_validate(request)
+        if isinstance(request, AgentRequest):
+            normalized_request = request
+        elif hasattr(request, "model_dump"):
+            normalized_request = AgentRequest.model_validate(request.model_dump())
+        else:
+            normalized_request = AgentRequest.model_validate(request)
+
+        request = normalized_request
         session_state = request.session_state or SessionState()
+        index_state = await self._operational_workflow.corpus_index_state()
+        session_state, cache_invalidation_warnings = self._invalidate_stale_cache(
+            session_state,
+            index_state.fingerprint,
+        )
         classification = self._classifier.classify(request.message, session_state)
         route_plan = self.build_route_plan(classification.query_type, session_state)
         context = AgentExecutionContext(
@@ -127,7 +141,14 @@ class AgentOrchestrator:
                 option.option_id for option in context.comparison_options
             ],
             recommendation_config=self._recommendation_engine.config,
+            index_fingerprint=index_state.fingerprint,
         )
+        result.warnings.extend(cache_invalidation_warnings)
+        result.warnings.extend(index_state.warnings)
+        if classification.query_type == QueryType.COMPARISON and len(context.comparison_options) < 2:
+            result.warnings.append(
+                "Comparison context is incomplete; provide two options for a stronger comparison."
+            )
 
         if self._needs_document_prefetch(classification.query_type):
             result.retrieval_output = await self._document_agent.run(context)
@@ -215,6 +236,7 @@ class AgentOrchestrator:
                         result.retrieval_output,
                         narrative_context,
                     )
+                    result.warnings.extend(result.roi_output.warnings)
                     result.invoked_agents.append(AgentInvocation(target=target))
                     result.invoked_tools.extend(
                         [
@@ -368,21 +390,56 @@ class AgentOrchestrator:
         logger.info(
             "orchestrator_summary=%s",
             {
+                "classification": classification.query_type.value,
+                "route": [target.value for target in route_plan.agent_sequence],
                 "subagents_invoked": [
                     item.target.value for item in result.invoked_agents
                 ],
                 "tools_invoked": [
                     item.tool_name.value for item in result.invoked_tools
                 ],
+                "retrieval_hits": (
+                    len(result.retrieval_output.raw_candidates)
+                    if result.retrieval_output is not None
+                    else 0
+                ),
                 "cache_reuse": [
                     item.target.value for item in result.invoked_agents if item.cached
                 ],
                 "recomputed": [item.value for item in route_plan.outputs_to_recompute],
+                "scorer_inputs": {
+                    "has_narrative": result.narrative_output is not None,
+                    "has_roi": result.roi_output is not None,
+                    "has_risk": result.risk_output is not None,
+                    "has_catalog": result.catalog_output is not None,
+                },
+                "scorer_outputs": {
+                    "completion_rate": (
+                        result.completion_score.projected_completion_rate
+                        if result.completion_score is not None
+                        else None
+                    ),
+                    "estimated_roi": (
+                        result.roi_score.estimated_roi if result.roi_score is not None else None
+                    ),
+                    "risk_level": (
+                        result.risk_score.overall_severity.value
+                        if result.risk_score is not None
+                        else None
+                    ),
+                    "catalog_fit_score": (
+                        result.catalog_fit_score.score
+                        if result.catalog_fit_score is not None
+                        else None
+                    ),
+                },
                 "recommendation": (
                     result.recommendation_result.outcome.value
                     if result.recommendation_result is not None
                     else None
                 ),
+                "index_fingerprint": index_state.fingerprint,
+                "warnings": result.warnings,
             },
         )
         return result
@@ -448,6 +505,10 @@ class AgentOrchestrator:
         current = state or SessionState()
         now = datetime.now(UTC)
         retrieval_context = list(current.retrieval_context)
+        retrieval_context = [
+            entry for entry in retrieval_context if not entry.startswith("index_fingerprint:")
+        ]
+        retrieval_context.append(f"index_fingerprint:{result.index_fingerprint or 'unknown'}")
         retrieval_context.extend(
             candidate.section_id
             for candidate in (
@@ -523,6 +584,39 @@ class AgentOrchestrator:
                     f"Requested cached output {output_name.value} was unavailable."
                 )
         return warnings
+
+    def _invalidate_stale_cache(
+        self,
+        session_state: SessionState,
+        current_fingerprint: str,
+    ) -> tuple[SessionState, list[str]]:
+        previous_fingerprint = self._retrieval_context_marker(
+            session_state.retrieval_context,
+            "index_fingerprint:",
+        )
+        if previous_fingerprint is None:
+            return session_state, []
+        if previous_fingerprint == current_fingerprint:
+            return session_state, []
+        invalidated_state = session_state.model_copy(
+            update={
+                "narrative_output": None,
+                "roi_output": None,
+                "risk_output": None,
+                "catalog_output": None,
+            }
+        )
+        return invalidated_state, [
+            "Session cache was invalidated because indexed documents changed after reindex.",
+        ]
+
+    def _retrieval_context_marker(
+        self, retrieval_context: list[str], prefix: str
+    ) -> str | None:
+        for entry in retrieval_context:
+            if entry.startswith(prefix):
+                return entry.removeprefix(prefix)
+        return None
 
     def _to_session_output(
         self, value: object, generated_at: datetime

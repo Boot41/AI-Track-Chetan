@@ -114,3 +114,50 @@ async def test_partial_ingestion_fallback_is_traceable(db: AsyncSession) -> None
 
     assert inventory_results[0].fallback_applied is True
     assert inventory_results[0].warnings
+
+
+async def test_ingestion_continues_when_one_document_fails(db: AsyncSession) -> None:
+    from pathlib import Path
+
+    service = DocumentIngestionService()
+    temp_root = Path("server/tests/.tmp_raw_partial_failure")
+    temp_pitch = temp_root / "pitch_partial_failure"
+    temp_pitch.mkdir(parents=True, exist_ok=True)
+    (temp_pitch / "01_valid_note.md").write_text(
+        "## Section\n\nThis is valid markdown content for indexing.",
+        encoding="utf-8",
+    )
+    (temp_pitch / "manifest.json").write_text(
+        json.dumps(
+            {
+                "content_id": "pitch_partial_failure",
+                "title": "Partial Failure",
+                "documents": [
+                    {
+                        "filename": "01_valid_note.md",
+                        "doc_type": "Strategic Analysis",
+                        "title": "Valid Doc",
+                        "sectioning_hint": "memo_section",
+                    },
+                    {
+                        "filename": "02_missing_note.md",
+                        "doc_type": "Strategic Analysis",
+                        "title": "Missing Doc",
+                        "sectioning_hint": "memo_section",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    try:
+        results = await service.ingest_corpus(db, raw_root=temp_root)
+    finally:
+        for path in sorted(temp_pitch.glob("*"), reverse=True):
+            path.unlink()
+        temp_pitch.rmdir()
+        temp_root.rmdir()
+
+    assert len(results) == 1
+    assert results[0].status.value == "partial"
+    assert any("listed in manifest but file is missing" in error for error in results[0].errors)

@@ -504,8 +504,14 @@ class RoiPredictionAgent(RoiPredictionAgentInterface):
         assumptions = [
             "ROI inputs are normalized from seeded structured metrics and retrieval-backed comparables.",
         ]
+        warnings: list[str] = []
         if narrative_output is not None:
             assumptions.append(f"Narrative hooks adjusted completion input via {narrative_output.genre}.")
+        if not comparable_titles:
+            warnings.append(
+                "Comparable-title evidence is weak; ROI estimate was computed using baseline structured metrics."
+            )
+        warnings.extend(metrics_result.warnings)
         return RoiAgentOutput(
             summary="ROI prediction assembled typed completion, retention, ROI, and cost-per-view inputs.",
             assumptions=assumptions,
@@ -516,6 +522,7 @@ class RoiPredictionAgent(RoiPredictionAgentInterface):
             cost_per_view_inputs=cost_per_view_inputs,
             comparable_titles=comparable_titles[:4],
             evidence=evidence.evidence,
+            warnings=warnings,
         )
 
 

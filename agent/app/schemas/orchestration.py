@@ -366,6 +366,7 @@ class RoiAgentOutput(BaseModel):
     cost_per_view_inputs: CostPerViewInputs
     comparable_titles: list[ComparableTitleEvidence] = Field(default_factory=list)
     evidence: list[EvidenceReference] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 
 class RiskAgentOutput(BaseModel):
@@ -416,3 +417,4 @@ class OrchestrationResult(BaseModel):
     invoked_agents: list[AgentInvocation] = Field(default_factory=list)
     invoked_tools: list[ToolInvocation] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    index_fingerprint: str | None = None

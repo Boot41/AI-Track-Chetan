@@ -276,6 +276,7 @@ Use `pytest` for:
 - backend auth flow
 - backend-agent communication
 - persistence of chat/evaluation results
+- run integration tests with escalation (outside sandbox) when execution environment blocks local DB access from sandboxed processes
 
 #### End-to-end tests
 Use `Playwright` for:

@@ -232,7 +232,7 @@ async def create_message_and_evaluation(
         agent_request=envelope,
         duration_ms=duration_ms,
         success=True,
-        backend_mode="stub",
+        backend_mode=agent_client.__class__.__name__,
         persisted_evaluation_id=evaluation.id,
     )
     logger.info("agent_proxy_success {}", invocation_log.model_dump_json())
