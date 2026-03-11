@@ -78,3 +78,33 @@ export interface PublicResponseContract {
   evidence: EvidenceItem[];
   meta: MetaContract;
 }
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function assertPublicMeta(meta: unknown): asserts meta is MetaContract {
+  if (!isRecord(meta)) {
+    throw new Error("Invalid response meta");
+  }
+  if (!Array.isArray(meta.warnings) || typeof meta.confidence !== "number" || typeof meta.review_required !== "boolean") {
+    throw new Error("Invalid response meta");
+  }
+}
+
+export function parsePublicResponseContract(value: unknown): PublicResponseContract {
+  if (!isRecord(value)) {
+    throw new Error("Invalid response payload");
+  }
+  if (typeof value.answer !== "string") {
+    throw new Error("Invalid response answer");
+  }
+  if (!isRecord(value.scorecard)) {
+    throw new Error("Invalid response scorecard");
+  }
+  if (!Array.isArray(value.evidence)) {
+    throw new Error("Invalid response evidence");
+  }
+  assertPublicMeta(value.meta);
+  return value as unknown as PublicResponseContract;
+}

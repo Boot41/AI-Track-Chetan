@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
@@ -11,53 +11,47 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type {
   ComparisonOption,
   ComparisonScorecard,
   EvidenceItem,
   PublicResponseContract,
+  QueryType,
 } from "./contracts/public-contract";
-import { fixtureConversations } from "./lib/fixtures";
+import {
+  clearStoredAuthSession,
+  createSession,
+  getSessionEvaluations,
+  getSessionMessages,
+  getStoredAuthSession,
+  listSessions,
+  login,
+  persistAuthSession,
+  sendMessage,
+  type AuthSession,
+  type ChatMessageRecord,
+  type PersistedEvaluationRecord,
+  type SessionSummary,
+} from "./lib/backend";
 
-const AUTH_STORAGE_KEY = "phase15-demo-auth";
-
-interface AuthState {
-  username: string;
-}
-
-interface TimelineMessage {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-}
-
-function loadAuthState(): AuthState | null {
-  const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(raw) as AuthState;
-  } catch {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    return null;
-  }
-}
-
-function saveAuthState(authState: AuthState | null): void {
-  if (authState === null) {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    return;
-  }
-
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
-}
+const QUERY_TYPE_OPTIONS: Array<{ value: QueryType; label: string }> = [
+  { value: "original_eval", label: "Original Evaluation" },
+  { value: "acquisition_eval", label: "Acquisition Evaluation" },
+  { value: "comparison", label: "Comparison" },
+  { value: "followup_why_narrative", label: "Follow-up: Narrative" },
+  { value: "followup_why_roi", label: "Follow-up: ROI" },
+  { value: "followup_why_risk", label: "Follow-up: Risk" },
+  { value: "followup_why_catalog", label: "Follow-up: Catalog Fit" },
+  { value: "scenario_change_budget", label: "Scenario: Budget Change" },
+  { value: "scenario_change_localization", label: "Scenario: Localization Change" },
+  { value: "general_question", label: "General Question" },
+];
 
 function ProtectedRoute({
   isAuthenticated,
@@ -74,19 +68,32 @@ function ProtectedRoute({
 }
 
 function LoginPage({
-  onLogin,
   isAuthenticated,
+  onLogin,
 }: {
-  onLogin: (username: string) => void;
   isAuthenticated: boolean;
+  onLogin: (username: string, password: string) => Promise<void>;
 }) {
-  const navigate = useNavigate();
-  const [username, setUsername] = useState("analyst@streamlogic.internal");
-  const [password, setPassword] = useState("phase15-demo");
+  const [username, setUsername] = useState("testuser");
+  const [password, setPassword] = useState("testpass");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   if (isAuthenticated) {
     return <Navigate to="/app" replace />;
   }
+
+  const submit = async () => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      await onLogin(username, password);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <Box
@@ -111,18 +118,24 @@ function LoginPage({
           <Stack spacing={3}>
             <Box>
               <Typography variant="overline" color="text.secondary">
-                Phase 1.5 Fixture Shell
+                StreamLogic Analyst Login
               </Typography>
               <Typography variant="h3" sx={{ mt: 1 }}>
                 StreamLogic AI
               </Typography>
               <Typography color="text.secondary" sx={{ mt: 1.5 }}>
-                Protected analyst workspace stub backed only by Phase 0 fixtures.
+                Sign in to access protected sessions, chat history, scorecards, and evidence.
               </Typography>
             </Box>
+            {error ? (
+              <Alert severity="error" data-testid="auth-error">
+                {error}
+              </Alert>
+            ) : null}
             <TextField
-              label="Work Email"
+              label="Username"
               value={username}
+              disabled={submitting}
               onChange={(event) => setUsername(event.target.value)}
               inputProps={{ "data-testid": "login-username" }}
             />
@@ -130,6 +143,7 @@ function LoginPage({
               label="Password"
               type="password"
               value={password}
+              disabled={submitting}
               onChange={(event) => setPassword(event.target.value)}
               inputProps={{ "data-testid": "login-password" }}
             />
@@ -137,12 +151,10 @@ function LoginPage({
               size="large"
               variant="contained"
               data-testid="login-submit"
-              onClick={() => {
-                onLogin(username);
-                navigate("/app", { replace: true });
-              }}
+              disabled={submitting}
+              onClick={submit}
             >
-              Enter Workspace
+              {submitting ? "Signing in..." : "Sign In"}
             </Button>
           </Stack>
         </CardContent>
@@ -170,6 +182,13 @@ function EvidencePanel({ evidence }: { evidence: EvidenceItem[] }) {
   return (
     <Stack spacing={2} data-testid="evidence-panel">
       <Typography variant="h5">Evidence</Typography>
+      {evidence.length === 0 ? (
+        <Card variant="outlined" sx={{ borderRadius: 4 }}>
+          <CardContent>
+            <Typography color="text.secondary">No evidence was returned for this turn.</Typography>
+          </CardContent>
+        </Card>
+      ) : null}
       {evidence.map((item) => (
         <Card key={item.evidence_id} variant="outlined" sx={{ borderRadius: 4 }}>
           <CardContent>
@@ -200,7 +219,7 @@ function EvidencePanel({ evidence }: { evidence: EvidenceItem[] }) {
 function ComparisonView({ comparison }: { comparison: ComparisonScorecard }) {
   return (
     <Stack spacing={2} data-testid="comparison-view">
-      <Typography variant="h5">Comparison Stub</Typography>
+      <Typography variant="h5">Comparison</Typography>
       <Typography color="text.secondary">{comparison.summary}</Typography>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
         {comparison.options.map((option: ComparisonOption) => (
@@ -251,10 +270,7 @@ function ScorecardPanel({ response }: { response: PublicResponseContract }) {
       </Box>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
         <MetricCard label="Recommendation" value={scorecard.recommendation ?? "Pending"} />
-        <MetricCard
-          label="Estimated ROI"
-          value={scorecard.estimated_roi?.toFixed(2) ?? "n/a"}
-        />
+        <MetricCard label="Estimated ROI" value={scorecard.estimated_roi?.toFixed(2) ?? "n/a"} />
         <MetricCard
           label="Catalog Fit"
           value={scorecard.catalog_fit_score?.toFixed(0) ?? "n/a"}
@@ -273,6 +289,11 @@ function ScorecardPanel({ response }: { response: PublicResponseContract }) {
             value={meta.confidence * 100}
             sx={{ mt: 1.5, height: 10, borderRadius: 999 }}
           />
+          {meta.review_required ? (
+            <Alert severity="warning" sx={{ mt: 2 }} data-testid="review-required">
+              Manual review required before decision finalization.
+            </Alert>
+          ) : null}
           {meta.warnings.map((warning) => (
             <Alert key={warning} severity="warning" sx={{ mt: 2 }}>
               {warning}
@@ -307,26 +328,121 @@ function ScorecardPanel({ response }: { response: PublicResponseContract }) {
   );
 }
 
-function Workspace({
-  authState,
-  onLogout,
-}: {
-  authState: AuthState;
-  onLogout: () => void;
-}) {
-  const [activeConversationId, setActiveConversationId] = useState(fixtureConversations[0].id);
-  const activeConversation =
-    fixtureConversations.find((conversation) => conversation.id === activeConversationId) ??
-    fixtureConversations[0];
+function Workspace({ authSession, onLogout }: { authSession: AuthSession; onLogout: () => void }) {
+  const [sessions, setSessions] = useState<SessionSummary[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
-  const timeline: TimelineMessage[] = [
-    { id: `${activeConversation.id}-user`, role: "user", text: activeConversation.prompt },
-    {
-      id: `${activeConversation.id}-assistant`,
-      role: "assistant",
-      text: activeConversation.response.answer,
-    },
-  ];
+  const [messages, setMessages] = useState<ChatMessageRecord[]>([]);
+  const [evaluations, setEvaluations] = useState<PersistedEvaluationRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [activeEvaluationId, setActiveEvaluationId] = useState<string | null>(null);
+
+  const [messageInput, setMessageInput] = useState("");
+  const [queryType, setQueryType] = useState<QueryType>("original_eval");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const activeResponse = useMemo(() => {
+    if (evaluations.length === 0) {
+      return null;
+    }
+    if (activeEvaluationId === null) {
+      return evaluations[0].response;
+    }
+    const selected = evaluations.find((item) => item.id === activeEvaluationId);
+    return selected?.response ?? evaluations[0].response;
+  }, [activeEvaluationId, evaluations]);
+
+  const refreshSessions = useCallback(async () => {
+    setSessionsError(null);
+    setSessionsLoading(true);
+    try {
+      const nextSessions = await listSessions();
+      setSessions(nextSessions);
+      setActiveSessionId((previous) => {
+        if (previous && nextSessions.some((session) => session.id === previous)) {
+          return previous;
+        }
+        return nextSessions[0]?.id ?? null;
+      });
+    } catch (err) {
+      setSessionsError(err instanceof Error ? err.message : "Failed to load sessions");
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  const loadSessionHistory = useCallback(async (sessionId: string) => {
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const [messagesResponse, evaluationsResponse] = await Promise.all([
+        getSessionMessages(sessionId),
+        getSessionEvaluations(sessionId),
+      ]);
+      setMessages(messagesResponse.messages);
+      setEvaluations(evaluationsResponse.evaluations);
+      setActiveEvaluationId(evaluationsResponse.evaluations[0]?.id ?? null);
+    } catch (err) {
+      setHistoryError(err instanceof Error ? err.message : "Failed to load session history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshSessions();
+  }, [refreshSessions]);
+
+  useEffect(() => {
+    if (!activeSessionId) {
+      setMessages([]);
+      setEvaluations([]);
+      setActiveEvaluationId(null);
+      return;
+    }
+    void loadSessionHistory(activeSessionId);
+  }, [activeSessionId, loadSessionHistory]);
+
+  const handleCreateSession = async () => {
+    setSessionsError(null);
+    try {
+      const created = await createSession();
+      await refreshSessions();
+      setActiveSessionId(created.session.id);
+    } catch (err) {
+      setSessionsError(err instanceof Error ? err.message : "Failed to create session");
+    }
+  };
+
+  const handleSubmitMessage = async () => {
+    const trimmed = messageInput.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      let sessionId = activeSessionId;
+      if (!sessionId) {
+        const created = await createSession({ title: trimmed.slice(0, 64) });
+        sessionId = created.session.id;
+        setActiveSessionId(sessionId);
+      }
+      await sendMessage(sessionId, { message: trimmed, query_type: queryType });
+      setMessageInput("");
+      await refreshSessions();
+      await loadSessionHistory(sessionId);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to send message");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <Box
@@ -359,16 +475,16 @@ function Workspace({
                   Protected Workspace
                 </Typography>
                 <Typography variant="h3" sx={{ mt: 1 }}>
-                  Fixture-backed contract review
+                  Authenticated Decision Support
                 </Typography>
                 <Typography sx={{ mt: 1.5, maxWidth: 760, opacity: 0.86 }}>
-                  The UI renders only the agreed public contract: answer, scorecard, evidence, and
-                  minimal meta. No scoring, retrieval, or recommendation logic runs in the client.
+                  The frontend renders backend-validated `answer`, `scorecard`, `evidence`, and
+                  minimal `meta` fields only.
                 </Typography>
               </Box>
               <Stack direction="row" spacing={1.5} alignItems="center">
                 <Chip
-                  label={authState.username}
+                  label={authSession.user.username}
                   sx={{ bgcolor: "rgba(255,255,255,0.12)", color: "common.white" }}
                 />
                 <Button variant="outlined" color="inherit" onClick={onLogout}>
@@ -389,30 +505,35 @@ function Workspace({
         >
           <Card variant="outlined" sx={{ borderRadius: 5 }}>
             <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Sessions
-              </Typography>
-              <List disablePadding>
-                {fixtureConversations.map((conversation) => (
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Typography variant="h6">Sessions</Typography>
+                <Button size="small" onClick={handleCreateSession} data-testid="create-session">
+                  New
+                </Button>
+              </Stack>
+              {sessionsError ? <Alert severity="error">{sessionsError}</Alert> : null}
+              {sessionsLoading ? <LinearProgress /> : null}
+              <List disablePadding data-testid="session-list">
+                {sessions.map((session) => (
                   <ListItemButton
-                    key={conversation.id}
-                    selected={conversation.id === activeConversation.id}
-                    onClick={() => setActiveConversationId(conversation.id)}
-                    data-testid={`fixture-tab-${conversation.id}`}
+                    key={session.id}
+                    selected={session.id === activeSessionId}
+                    onClick={() => setActiveSessionId(session.id)}
+                    data-testid={`session-tab-${session.id}`}
                     sx={{ borderRadius: 3, mb: 1 }}
                   >
                     <ListItemText
-                      primary={conversation.label}
-                      secondary={conversation.response.scorecard.query_type}
+                      primary={session.title ?? "Untitled Session"}
+                      secondary={session.latest_query_type ?? "No evaluations yet"}
                     />
                   </ListItemButton>
                 ))}
               </List>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="body2" color="text.secondary" data-testid="route-guard-shell">
-                Route guard is local-only in this phase. Real JWT-backed navigation remains a later
-                phase.
-              </Typography>
+              {!sessionsLoading && sessions.length === 0 ? (
+                <Typography color="text.secondary" data-testid="empty-session-history">
+                  No sessions yet. Create one or send a message to start.
+                </Typography>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -423,10 +544,12 @@ function Workspace({
                   Chat Timeline
                 </Typography>
                 <Typography color="text.secondary" sx={{ mt: 0.75, mb: 2 }}>
-                  Fixture conversation shell
+                  Session-backed conversation history
                 </Typography>
+                {historyError ? <Alert severity="error">{historyError}</Alert> : null}
+                {historyLoading ? <LinearProgress sx={{ mb: 2 }} /> : null}
                 <Stack spacing={2.5}>
-                  {timeline.map((message) => (
+                  {messages.map((message) => (
                     <Box
                       key={message.id}
                       sx={{
@@ -445,19 +568,103 @@ function Workspace({
                           <Typography variant="overline" sx={{ opacity: 0.7 }}>
                             {message.role}
                           </Typography>
-                          <Typography sx={{ mt: 0.75 }}>{message.text}</Typography>
+                          <Typography sx={{ mt: 0.75 }}>{message.message_text}</Typography>
                         </CardContent>
                       </Card>
                     </Box>
                   ))}
+                  {messages.length === 0 && !historyLoading ? (
+                    <Typography color="text.secondary">No messages in this session yet.</Typography>
+                  ) : null}
+                </Stack>
+                <Divider sx={{ my: 2.5 }} />
+                {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+                <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
+                  <TextField
+                    select
+                    label="Query Type"
+                    value={queryType}
+                    onChange={(event) => setQueryType(event.target.value as QueryType)}
+                    sx={{ minWidth: { xs: "100%", md: 240 } }}
+                    inputProps={{ "data-testid": "query-type" }}
+                  >
+                    {QUERY_TYPE_OPTIONS.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField
+                    fullWidth
+                    label="Ask a question"
+                    value={messageInput}
+                    disabled={submitting}
+                    onChange={(event) => setMessageInput(event.target.value)}
+                    inputProps={{ "data-testid": "chat-input" }}
+                  />
+                  <Button
+                    variant="contained"
+                    disabled={submitting}
+                    onClick={handleSubmitMessage}
+                    data-testid="chat-submit"
+                  >
+                    {submitting ? "Sending..." : "Send"}
+                  </Button>
                 </Stack>
               </CardContent>
             </Card>
           </Stack>
 
           <Stack spacing={2}>
-            <ScorecardPanel response={activeConversation.response} />
-            <EvidencePanel evidence={activeConversation.response.evidence} />
+            <Card variant="outlined" sx={{ borderRadius: 5 }}>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 1.5 }}>
+                  Evaluations
+                </Typography>
+                <List disablePadding data-testid="evaluation-list">
+                  {evaluations.map((evaluation) => (
+                    <ListItemButton
+                      key={evaluation.id}
+                      selected={evaluation.id === activeEvaluationId}
+                      onClick={() => setActiveEvaluationId(evaluation.id)}
+                      sx={{ borderRadius: 3, mb: 1 }}
+                    >
+                      <ListItemText
+                        primary={evaluation.response.scorecard.title}
+                        secondary={evaluation.response.scorecard.query_type}
+                      />
+                    </ListItemButton>
+                  ))}
+                </List>
+                {evaluations.length === 0 ? (
+                  <Typography color="text.secondary">
+                    No evaluations yet for the current session.
+                  </Typography>
+                ) : null}
+              </CardContent>
+            </Card>
+            {activeResponse ? (
+              <>
+                <Card variant="outlined" sx={{ borderRadius: 5 }}>
+                  <CardContent>
+                    <Typography variant="h5" sx={{ mb: 1.5 }}>
+                      Answer
+                    </Typography>
+                    <Typography data-testid="assistant-answer">{activeResponse.answer}</Typography>
+                  </CardContent>
+                </Card>
+                <ScorecardPanel response={activeResponse} />
+                <EvidencePanel evidence={activeResponse.evidence} />
+              </>
+            ) : (
+              <Card variant="outlined" sx={{ borderRadius: 5 }}>
+                <CardContent>
+                  <Typography color="text.secondary" data-testid="empty-response">
+                    No response available yet. Send a message to evaluate.
+                  </Typography>
+                </CardContent>
+              </Card>
+            )}
           </Stack>
         </Box>
       </Stack>
@@ -466,41 +673,46 @@ function Workspace({
 }
 
 function App() {
-  const [authState, setAuthState] = useState<AuthState | null>(null);
+  const [authSession, setAuthSession] = useState<AuthSession | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setAuthState(loadAuthState());
+    setAuthSession(getStoredAuthSession());
+    setHydrated(true);
   }, []);
 
-  const handleLogin = (username: string) => {
-    const nextState = { username };
-    saveAuthState(nextState);
-    setAuthState(nextState);
+  const handleLogin = async (username: string, password: string) => {
+    const session = await login(username, password);
+    persistAuthSession(session);
+    setAuthSession(session);
   };
 
   const handleLogout = () => {
-    saveAuthState(null);
-    setAuthState(null);
+    clearStoredAuthSession();
+    setAuthSession(null);
   };
+
+  if (!hydrated) {
+    return <LinearProgress />;
+  }
 
   return (
     <Routes>
       <Route
         path="/login"
-        element={<LoginPage onLogin={handleLogin} isAuthenticated={authState !== null} />}
+        element={
+          <LoginPage isAuthenticated={authSession !== null} onLogin={handleLogin} />
+        }
       />
       <Route
         path="/app"
         element={
-          <ProtectedRoute isAuthenticated={authState !== null}>
-            <Workspace authState={authState ?? { username: "anonymous" }} onLogout={handleLogout} />
+          <ProtectedRoute isAuthenticated={authSession !== null}>
+            <Workspace authSession={authSession!} onLogout={handleLogout} />
           </ProtectedRoute>
         }
       />
-      <Route
-        path="*"
-        element={<Navigate to={authState !== null ? "/app" : "/login"} replace />}
-      />
+      <Route path="*" element={<Navigate to={authSession !== null ? "/app" : "/login"} replace />} />
     </Routes>
   );
 }
