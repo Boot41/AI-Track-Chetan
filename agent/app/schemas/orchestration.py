@@ -5,6 +5,26 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from agent.app.schemas.evaluation import (
+    CatalogFitInputs,
+    CatalogFitScore,
+    CharacterArcSignal,
+    ComparableTitleEvidence,
+    CompletionRateInputs,
+    CompletionRateScore,
+    CostPerViewInputs,
+    FranchiseAssessment,
+    NarrativeRedFlag,
+    NarrativeScoreInputs,
+    RecommendationConfig,
+    RecommendationResult,
+    RetrievalEvidencePackage,
+    RiskFinding,
+    RiskScore,
+    RoiInputs,
+    RoiScore,
+    RetentionLiftInputs,
+)
 from agent.app.schemas.ingestion import DocumentType, RetrievalMethod
 from agent.app.schemas.retrieval import RetrievalCandidate
 
@@ -69,6 +89,7 @@ class SessionAgentOutput(BaseModel):
     summary: str = Field(min_length=1)
     confidence: float = Field(ge=0.0, le=1.0)
     generated_at: datetime
+    payload: dict[str, object] = Field(default_factory=dict)
 
 
 class ComparisonOption(BaseModel):
@@ -314,6 +335,7 @@ class RetrievalAgentOutput(BaseModel):
     summary: str = Field(min_length=1)
     evidence: list[EvidenceReference] = Field(default_factory=list)
     raw_candidates: list[RetrievalCandidate] = Field(default_factory=list)
+    packages: list[RetrievalEvidencePackage] = Field(default_factory=list)
 
 
 class NarrativeAgentOutput(BaseModel):
@@ -321,6 +343,14 @@ class NarrativeAgentOutput(BaseModel):
 
     summary: str = Field(min_length=1)
     features: list[NarrativeFeature] = Field(default_factory=list)
+    genre: str = Field(min_length=1)
+    themes: list[str] = Field(default_factory=list)
+    tone: list[str] = Field(default_factory=list)
+    pacing: str = Field(min_length=1)
+    character_arcs: list[CharacterArcSignal] = Field(default_factory=list)
+    franchise_potential: FranchiseAssessment
+    narrative_red_flags: list[NarrativeRedFlag] = Field(default_factory=list)
+    score_inputs: NarrativeScoreInputs
     evidence: list[EvidenceReference] = Field(default_factory=list)
 
 
@@ -330,6 +360,11 @@ class RoiAgentOutput(BaseModel):
     summary: str = Field(min_length=1)
     assumptions: list[str] = Field(default_factory=list)
     metrics: list[SqlMetricRecord] = Field(default_factory=list)
+    completion_inputs: CompletionRateInputs
+    retention_inputs: RetentionLiftInputs
+    roi_inputs: RoiInputs
+    cost_per_view_inputs: CostPerViewInputs
+    comparable_titles: list[ComparableTitleEvidence] = Field(default_factory=list)
     evidence: list[EvidenceReference] = Field(default_factory=list)
 
 
@@ -338,6 +373,7 @@ class RiskAgentOutput(BaseModel):
 
     summary: str = Field(min_length=1)
     clauses: list[ClauseMatch] = Field(default_factory=list)
+    findings: list[RiskFinding] = Field(default_factory=list)
     evidence: list[EvidenceReference] = Field(default_factory=list)
 
 
@@ -346,6 +382,7 @@ class CatalogAgentOutput(BaseModel):
 
     summary: str = Field(min_length=1)
     signals: list[str] = Field(default_factory=list)
+    inputs: CatalogFitInputs
     evidence: list[EvidenceReference] = Field(default_factory=list)
 
 
@@ -369,8 +406,13 @@ class OrchestrationResult(BaseModel):
     roi_output: RoiAgentOutput | None = None
     risk_output: RiskAgentOutput | None = None
     catalog_output: CatalogAgentOutput | None = None
+    completion_score: CompletionRateScore | None = None
+    roi_score: RoiScore | None = None
+    risk_score: RiskScore | None = None
+    catalog_fit_score: CatalogFitScore | None = None
+    recommendation_result: RecommendationResult | None = None
+    recommendation_config: RecommendationConfig = Field(default_factory=RecommendationConfig)
     handoffs: list[HandoffOutput] = Field(default_factory=list)
     invoked_agents: list[AgentInvocation] = Field(default_factory=list)
     invoked_tools: list[ToolInvocation] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
-

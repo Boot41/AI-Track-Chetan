@@ -4,6 +4,7 @@ from sqlalchemy import Select, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from agent.app.persistence.tables import document_facts, document_risks, document_sections, documents
+from agent.app.schemas.ingestion import DocumentType
 from agent.app.schemas.orchestration import ClauseExtractionRequest, ClauseExtractionResult, ClauseMatch
 
 
@@ -29,6 +30,7 @@ class ClauseExtractionTool:
             .join(document_sections, document_sections.c.document_id == documents.c.id)
             .outerjoin(document_risks, document_risks.c.section_id == document_sections.c.id)
             .outerjoin(document_facts, document_facts.c.section_id == document_sections.c.id)
+            .where(documents.c.document_type == DocumentType.CONTRACT.value)
             .where(or_(*[document_sections.c.content.ilike(f"%{token}%") for token in tokens]))
             .limit(request.limit)
         )
@@ -51,4 +53,3 @@ class ClauseExtractionTool:
         ]
         warnings = [] if clauses else ["No matching clauses were found."]
         return ClauseExtractionResult(clauses=clauses, warnings=warnings)
-
