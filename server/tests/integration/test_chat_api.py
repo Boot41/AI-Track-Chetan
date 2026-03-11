@@ -6,7 +6,7 @@ from httpx import AsyncClient
 
 from app.api.deps import agent_service_client
 from app.schemas.contracts import AgentRequestEnvelope, PublicResponseContract
-from app.services.agent_proxy import OrchestratorAgentServiceClient, StubAgentServiceClient
+from app.services.agent_proxy import StubAgentServiceClient
 
 
 @pytest.mark.asyncio
@@ -232,9 +232,7 @@ async def test_stub_proxy_dependency_returns_phase0_contract() -> None:
 async def test_followup_message_keeps_valid_public_envelope(
     client: AsyncClient,
     auth_headers: dict[str, str],
-    test_app: FastAPI,
 ) -> None:
-    test_app.dependency_overrides[agent_service_client] = lambda: OrchestratorAgentServiceClient()
     session_response = await client.post(
         "/api/v1/sessions",
         json={"title": "Follow-up"},
@@ -265,16 +263,36 @@ async def test_followup_message_keeps_valid_public_envelope(
     assert payload["scorecard"]["query_type"] == "followup_why_roi"
     assert payload["scorecard"]["focus_area"] == "roi"
     assert set(payload["meta"]) == {"warnings", "confidence", "review_required"}
-    test_app.dependency_overrides.pop(agent_service_client, None)
 
 
 @pytest.mark.asyncio
-async def test_general_question_sets_review_required_on_low_evidence_case(
+async def test_general_question_persists_review_required_response(
     client: AsyncClient,
     auth_headers: dict[str, str],
     test_app: FastAPI,
 ) -> None:
-    test_app.dependency_overrides[agent_service_client] = lambda: OrchestratorAgentServiceClient()
+    class LowConfidenceProxy:
+        async def evaluate(self, envelope):  # type: ignore[no-untyped-def]
+            return {
+                "answer": "Evidence quality is weak. Manual review is required.",
+                "scorecard": {
+                    "scorecard_type": "followup",
+                    "query_type": "general_question",
+                    "title": "General Question Follow-up",
+                    "recommendation": "CONDITIONAL",
+                    "estimated_roi": 1.02,
+                    "risk_flags": [],
+                    "focus_area": "roi",
+                },
+                "evidence": [],
+                "meta": {
+                    "warnings": ["Supporting evidence confidence is low."],
+                    "confidence": 0.32,
+                    "review_required": True,
+                },
+            }
+
+    test_app.dependency_overrides[agent_service_client] = lambda: LowConfidenceProxy()
     session_response = await client.post(
         "/api/v1/sessions",
         json={"title": "General"},
@@ -290,5 +308,12 @@ async def test_general_question_sets_review_required_on_low_evidence_case(
     payload = message_response.json()
     assert payload["scorecard"]["query_type"] == "general_question"
     assert payload["meta"]["review_required"] is True
-    assert payload["meta"]["confidence"] <= 0.45
+    assert payload["meta"]["confidence"] == 0.32
+    evaluations_response = await client.get(
+        f"/api/v1/sessions/{session_id}/evaluations",
+        headers=auth_headers,
+    )
+    assert evaluations_response.status_code == 200
+    persisted_meta = evaluations_response.json()["evaluations"][0]["response"]["meta"]
+    assert persisted_meta["review_required"] is True
     test_app.dependency_overrides.pop(agent_service_client, None)
