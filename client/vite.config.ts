@@ -1,14 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+const backendUrl = process.env.VITE_BACKEND_URL ?? "http://localhost:8010";
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
     proxy: {
-      "/api": "http://localhost:8010",
-      "/auth": "http://localhost:8010",
-      "/health": "http://localhost:8010",
+      "/api": backendUrl,
+      "/auth": backendUrl,
+      "/health": backendUrl,
     },
   },
 });
