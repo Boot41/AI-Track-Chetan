@@ -4,7 +4,7 @@ import asyncio
 import re
 from typing import Mapping, cast
 
-from sqlalchemy import Select, func, literal, select
+from sqlalchemy import Select, bindparam, func, literal, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from agent.app.persistence.tables import document_sections, documents
@@ -153,24 +153,78 @@ class HybridRetriever:
         if not document_ids:
             return []
         async with self._session_factory() as session:
-            rows = (
-                await session.execute(
-                    select(
-                        documents.c.id.label("document_id"),
-                        documents.c.document_type.label("document_type"),
-                        documents.c.source_path.label("source_path"),
-                        document_sections.c.id.label("section_id"),
-                        document_sections.c.section_type.label("section_type"),
-                        document_sections.c.source_reference.label("source_reference"),
-                        document_sections.c.content.label("snippet"),
-                        document_sections.c.structure_confidence.label("structure_confidence"),
-                        document_sections.c.embedding.label("embedding"),
-                    )
-                    .join(documents, document_sections.c.document_id == documents.c.id)
-                    .where(documents.c.id.in_(document_ids))
-                    .where(document_sections.c.embedding.is_not(None))
+            if await self._embedding_column_is_vector(session):
+                return await self._native_vector_search(session, query, document_ids, query_embedding)
+            return await self._fallback_vector_search(session, query, document_ids, query_embedding)
+
+    async def _native_vector_search(
+        self,
+        session: AsyncSession,
+        query: RetrievalQuery,
+        document_ids: list[str],
+        query_embedding: list[float],
+    ) -> list[dict[str, object]]:
+        stmt = text(
+            """
+            SELECT
+                d.id AS document_id,
+                d.document_type AS document_type,
+                d.source_path AS source_path,
+                ds.id AS section_id,
+                ds.section_type AS section_type,
+                ds.source_reference AS source_reference,
+                ds.content AS snippet,
+                ds.structure_confidence AS structure_confidence,
+                1 - (ds.embedding <=> CAST(:embedding AS vector)) AS method_score
+            FROM document_sections ds
+            JOIN documents d ON ds.document_id = d.id
+            WHERE d.id = ANY(:document_ids)
+              AND ds.embedding IS NOT NULL
+            ORDER BY ds.embedding <=> CAST(:embedding AS vector)
+            LIMIT :limit
+            """
+        ).bindparams(
+            bindparam("document_ids", expanding=False),
+            bindparam("embedding"),
+            bindparam("limit"),
+        )
+        rows = (
+            await session.execute(
+                stmt,
+                {
+                    "document_ids": document_ids,
+                    "embedding": str(query_embedding),
+                    "limit": query.limit * 3,
+                },
+            )
+        ).mappings().all()
+        return [self._normalize_result(dict(row), RetrievalMethod.VECTOR, query) for row in rows]
+
+    async def _fallback_vector_search(
+        self,
+        session: AsyncSession,
+        query: RetrievalQuery,
+        document_ids: list[str],
+        query_embedding: list[float],
+    ) -> list[dict[str, object]]:
+        rows = (
+            await session.execute(
+                select(
+                    documents.c.id.label("document_id"),
+                    documents.c.document_type.label("document_type"),
+                    documents.c.source_path.label("source_path"),
+                    document_sections.c.id.label("section_id"),
+                    document_sections.c.section_type.label("section_type"),
+                    document_sections.c.source_reference.label("source_reference"),
+                    document_sections.c.content.label("snippet"),
+                    document_sections.c.structure_confidence.label("structure_confidence"),
+                    document_sections.c.embedding.label("embedding"),
                 )
-            ).mappings().all()
+                .join(documents, document_sections.c.document_id == documents.c.id)
+                .where(documents.c.id.in_(document_ids))
+                .where(document_sections.c.embedding.is_not(None))
+            )
+        ).mappings().all()
 
         scored: list[dict[str, object]] = []
         for row in rows:
@@ -185,6 +239,18 @@ class HybridRetriever:
             scored.append(normalized)
         scored.sort(key=lambda item: self._as_float(item["method_score"]), reverse=True)
         return scored[: query.limit * 3]
+
+    async def _embedding_column_is_vector(self, session: AsyncSession) -> bool:
+        result = await session.execute(
+            text(
+                """
+                SELECT udt_name
+                FROM information_schema.columns
+                WHERE table_name = 'document_sections' AND column_name = 'embedding'
+                """
+            )
+        )
+        return result.scalar_one_or_none() == "vector"
 
     def _normalize_result(
         self,
