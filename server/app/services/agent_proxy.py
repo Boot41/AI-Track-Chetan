@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.schemas.contracts import (
     AgentRequestEnvelope,
@@ -10,6 +11,7 @@ from app.schemas.contracts import (
     PublicResponseContract,
     QueryType,
     ScorecardType,
+    SessionState,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -18,6 +20,138 @@ PUBLIC_RESPONSE_FIXTURE_DIR = REPO_ROOT / "server" / "app" / "fixtures" / "publi
 
 class AgentServiceClient(Protocol):
     async def evaluate(self, envelope: AgentRequestEnvelope) -> PublicResponseContract: ...
+
+
+def _ensure_repo_root_on_path() -> None:
+    repo_root = str(REPO_ROOT)
+    if repo_root not in sys.path:
+        sys.path.append(repo_root)
+
+
+def _to_orchestrator_session_state(
+    state: SessionState | None,
+) -> dict[str, Any] | None:
+    if state is None:
+        return None
+    payload = {
+        "pitch_id": state.pitch_id,
+        "query_type": state.query_type.value if state.query_type is not None else None,
+        "narrative_output": (
+            {**state.narrative_output.model_dump(mode="json"), "payload": {}}
+            if state.narrative_output is not None
+            else None
+        ),
+        "roi_output": (
+            {**state.roi_output.model_dump(mode="json"), "payload": {}}
+            if state.roi_output is not None
+            else None
+        ),
+        "risk_output": (
+            {**state.risk_output.model_dump(mode="json"), "payload": {}}
+            if state.risk_output is not None
+            else None
+        ),
+        "catalog_output": (
+            {**state.catalog_output.model_dump(mode="json"), "payload": {}}
+            if state.catalog_output is not None
+            else None
+        ),
+        "retrieval_context": state.retrieval_context,
+        "conversation_intent_history": [item.value for item in state.conversation_intent_history],
+        "comparison_state": (
+            {
+                "option_a": {
+                    "option_id": state.comparison_state.option_a.option_id,
+                    "label": state.comparison_state.option_a.label,
+                    "query_type": state.comparison_state.option_a.query_type.value,
+                },
+                "option_b": {
+                    "option_id": state.comparison_state.option_b.option_id,
+                    "label": state.comparison_state.option_b.label,
+                    "query_type": state.comparison_state.option_b.query_type.value,
+                },
+                "comparison_axes": [axis.value for axis in state.comparison_state.comparison_axes],
+                "active_option": state.comparison_state.active_option,
+            }
+            if state.comparison_state is not None
+            else None
+        ),
+        "active_option": state.active_option,
+    }
+    return payload
+
+
+def _previous_scorecard(state: SessionState | None) -> dict[str, object] | None:
+    if state is None:
+        return None
+    if state.last_scorecard is None:
+        return None
+    return state.last_scorecard.model_dump(mode="json")
+
+
+def _comparison_state(state: SessionState | None) -> dict[str, object] | None:
+    if state is None:
+        return None
+    if state.comparison_state is None:
+        return None
+    return state.comparison_state.model_dump(mode="json")
+
+
+class OrchestratorAgentServiceClient:
+    """Orchestrator-backed client with deterministic response normalization."""
+
+    def __init__(self) -> None:
+        self._orchestrator: Any | None = None
+
+    def _get_orchestrator(self) -> Any:
+        if self._orchestrator is not None:
+            return self._orchestrator
+        _ensure_repo_root_on_path()
+        from agent.app.agents.orchestrator import AgentOrchestrator
+        from agent.app.persistence.session import get_sessionmaker
+
+        self._orchestrator = AgentOrchestrator(get_sessionmaker())
+        return self._orchestrator
+
+    async def evaluate(self, envelope: AgentRequestEnvelope) -> PublicResponseContract:
+        _ensure_repo_root_on_path()
+        from agent.app.formatters import format_public_response
+        from agent.app.schemas.orchestration import (
+            AgentRequest as OrchestratorRequest,
+        )
+        from agent.app.schemas.orchestration import (
+            SessionState as OrchestratorSessionState,
+        )
+        from agent.app.schemas.orchestration import (
+            TrustedRequestContext as OrchestratorTrustedRequestContext,
+        )
+
+        envelope = AgentRequestEnvelope.model_validate(envelope)
+        orchestrator = self._get_orchestrator()
+        state_payload = _to_orchestrator_session_state(envelope.session_state)
+        orchestrator_state = (
+            OrchestratorSessionState.model_validate(state_payload)
+            if state_payload is not None
+            else None
+        )
+        result = await orchestrator.orchestrate(
+            OrchestratorRequest(
+                message=envelope.message,
+                context=OrchestratorTrustedRequestContext(
+                    user_id=envelope.context.user_id,
+                    session_id=envelope.context.session_id,
+                    chat_message_id=envelope.context.chat_message_id,
+                    evaluation_id=envelope.context.evaluation_id,
+                ),
+                session_state=orchestrator_state,
+            )
+        )
+        formatted = format_public_response(
+            result,
+            previous_scorecard=_previous_scorecard(envelope.session_state),
+            comparison_state=_comparison_state(envelope.session_state),
+        )
+        return PublicResponseContract.model_validate(formatted)
 
 
 class StubAgentServiceClient:
