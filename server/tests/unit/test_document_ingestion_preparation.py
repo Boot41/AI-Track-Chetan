@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from agent.app.ingestion.classifiers import DocumentTypeClassifier
@@ -66,3 +67,30 @@ def test_classifier_prefers_manifest_metadata() -> None:
     assert script_classification.parser_used == "ScriptParser"
     assert memo_classification.doc_type == DocumentType.MEMO
     assert memo_classification.parser_used == "ReportParser"
+
+
+def test_inventory_collects_errors_for_invalid_manifest_metadata(tmp_path: Path) -> None:
+    pitch_dir = tmp_path / "pitch_bad_manifest"
+    pitch_dir.mkdir(parents=True, exist_ok=True)
+    (pitch_dir / "01_doc.md").write_text("test", encoding="utf-8")
+    (pitch_dir / "manifest.json").write_text(
+        json.dumps(
+            {
+                "content_id": "pitch_bad_manifest",
+                "title": "Bad Manifest",
+                "documents": [
+                    {
+                        "filename": "01_doc.md",
+                        "doc_type": "Strategic Analysis",
+                        "title": "Bad Doc",
+                        "sectioning_hint": "invalid_hint_value",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    inventory = build_ingestion_inventory(tmp_path)
+    assert inventory.items == []
+    assert any("invalid sectioning_hint" in error for error in inventory.errors)

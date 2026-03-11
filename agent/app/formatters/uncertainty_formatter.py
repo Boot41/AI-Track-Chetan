@@ -65,8 +65,13 @@ def format_meta(
     warnings = list(dict.fromkeys([*result.warnings, *_structure_confidence_warnings(result)]))
     evidence_avg_confidence, evidence_count = _evidence_confidence(evidence)
     orchestration_confidence = _orchestration_confidence(result)
+    retrieval_grounded_count = (
+        len(result.retrieval_output.raw_candidates)
+        if result.retrieval_output is not None
+        else 0
+    )
 
-    if evidence_count == 0:
+    if evidence_count == 0 or retrieval_grounded_count == 0:
         warnings.append("No supporting evidence was retrieved for this response.")
     elif evidence_avg_confidence < LOW_CONFIDENCE_THRESHOLD:
         warnings.append("Supporting evidence confidence is low.")
@@ -78,6 +83,7 @@ def format_meta(
     )
     review_required = (
         evidence_count == 0
+        or retrieval_grounded_count == 0
         or confidence < REVIEW_REQUIRED_THRESHOLD
         or any("low-structure" in warning for warning in warnings)
     )

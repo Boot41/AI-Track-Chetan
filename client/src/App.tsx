@@ -15,8 +15,17 @@ import {
   Stack,
   TextField,
   Typography,
+  IconButton,
+  Grid,
 } from "@mui/material";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import LogoutIcon from "@mui/icons-material/Logout";
+import AddIcon from "@mui/icons-material/Add";
+import InsightsIcon from "@mui/icons-material/Insights";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
+import PersonIcon from "@mui/icons-material/Person";
+
 import type {
   ComparisonOption,
   ComparisonScorecard,
@@ -103,29 +112,24 @@ function LoginPage({
         display: "grid",
         placeItems: "center",
         px: 3,
-        background:
-          "radial-gradient(circle at top, rgba(14,116,144,0.18), transparent 34%), linear-gradient(135deg, #f8f1df 0%, #efe2cc 45%, #d9e7e2 100%)",
+        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
       }}
     >
       <Card
         sx={{
-          width: "min(100%, 460px)",
-          borderRadius: 6,
-          boxShadow: "0 28px 80px rgba(65, 53, 32, 0.18)",
-          border: "1px solid rgba(54, 83, 72, 0.12)",
+          width: "min(100%, 420px)",
+          borderRadius: 4,
+          boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
         }}
       >
         <CardContent sx={{ p: 4 }}>
           <Stack spacing={3}>
-            <Box>
-              <Typography variant="overline" color="text.secondary">
-                StreamLogic Analyst Login
-              </Typography>
-              <Typography variant="h3" sx={{ mt: 1 }}>
+            <Box sx={{ textAlign: "center" }}>
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
                 StreamLogic AI
               </Typography>
-              <Typography color="text.secondary" sx={{ mt: 1.5 }}>
-                Sign in to access protected sessions, chat history, scorecards, and evidence.
+              <Typography color="text.secondary">
+                Content Decision Support System
               </Typography>
             </Box>
             {error ? (
@@ -154,6 +158,7 @@ function LoginPage({
               data-testid="login-submit"
               disabled={submitting}
               onClick={submit}
+              sx={{ py: 1.5 }}
             >
               {submitting ? "Signing in..." : "Sign In"}
             </Button>
@@ -166,49 +171,35 @@ function LoginPage({
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <Card variant="outlined" sx={{ borderRadius: 4, minHeight: 120 }}>
-      <CardContent>
-        <Typography variant="overline" color="text.secondary">
-          {label}
-        </Typography>
-        <Typography variant="h4" sx={{ mt: 1 }}>
-          {value}
-        </Typography>
-      </CardContent>
-    </Card>
+    <Box sx={{ flex: 1, p: 2, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+      <Typography variant="caption" color="text.secondary" fontWeight="bold" sx={{ textTransform: "uppercase" }}>
+        {label}
+      </Typography>
+      <Typography variant="h5" sx={{ mt: 0.5 }}>
+        {value}
+      </Typography>
+    </Box>
   );
 }
 
 function EvidencePanel({ evidence }: { evidence: EvidenceItem[] }) {
+  if (evidence.length === 0) return null;
+
   return (
     <Stack spacing={2} data-testid="evidence-panel">
-      <Typography variant="h5">Evidence</Typography>
-      {evidence.length === 0 ? (
-        <Card variant="outlined" sx={{ borderRadius: 4 }}>
-          <CardContent>
-            <Typography color="text.secondary">No evidence was returned for this turn.</Typography>
-          </CardContent>
-        </Card>
-      ) : null}
+      <Typography variant="subtitle1" fontWeight="bold">Supporting Evidence</Typography>
       {evidence.map((item) => (
-        <Card key={item.evidence_id} variant="outlined" sx={{ borderRadius: 4 }}>
-          <CardContent>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
-              <Chip label={item.source_type} size="small" />
-              <Chip label={item.retrieval_method} size="small" variant="outlined" />
-              <Chip
-                label={`Confidence ${Math.round(item.confidence_score * 100)}%`}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
+        <Card key={item.evidence_id} variant="outlined" sx={{ borderRadius: 2, bgcolor: "grey.50" }}>
+          <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
+              <Chip label={item.source_type} size="small" sx={{ height: 20, fontSize: "0.7rem" }} />
+              <Chip label={`${Math.round(item.confidence_score * 100)}% Match`} size="small" color="primary" variant="outlined" sx={{ height: 20, fontSize: "0.7rem" }} />
             </Stack>
-            <Typography sx={{ mb: 1.5 }}>{item.snippet}</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {item.claim_it_supports}
+            <Typography variant="body2" sx={{ fontStyle: "italic", mb: 1 }}>
+              "{item.snippet}"
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1.5 }}>
-              {item.source_reference}
+            <Typography variant="caption" color="text.secondary" display="block">
+              Ref: {item.source_reference}
             </Typography>
           </CardContent>
         </Card>
@@ -220,38 +211,39 @@ function EvidencePanel({ evidence }: { evidence: EvidenceItem[] }) {
 function ComparisonView({ comparison }: { comparison: ComparisonScorecard }) {
   return (
     <Stack spacing={2} data-testid="comparison-view">
-      <Typography variant="h5">Comparison</Typography>
-      <Typography color="text.secondary">{comparison.summary}</Typography>
-      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+      <Typography variant="subtitle1" fontWeight="bold">Comparison Summary</Typography>
+      <Typography variant="body2" color="text.secondary">{comparison.summary}</Typography>
+      <Stack spacing={1.5}>
         {comparison.options.map((option: ComparisonOption) => (
           <Card
             key={option.option_id}
             variant="outlined"
             sx={{
-              flex: 1,
-              borderRadius: 4,
-              borderColor:
-                comparison.winning_option_id === option.option_id ? "primary.main" : "divider",
+              borderRadius: 2,
+              borderColor: comparison.winning_option_id === option.option_id ? "primary.main" : "divider",
+              borderWidth: comparison.winning_option_id === option.option_id ? 2 : 1,
             }}
           >
-            <CardContent>
-              <Stack spacing={1.5}>
-                <Typography variant="h6">{option.label}</Typography>
+            <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="subtitle2" fontWeight="bold">{option.label}</Typography>
                 <Chip
                   label={option.recommendation ?? "Pending"}
+                  size="small"
                   color={comparison.winning_option_id === option.option_id ? "primary" : "default"}
-                  sx={{ width: "fit-content" }}
                 />
-                <Typography variant="body2" color="text.secondary">
-                  ROI {option.estimated_roi?.toFixed(2) ?? "n/a"}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Catalog fit {option.catalog_fit_score ?? "n/a"}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Risk {option.risk_level ?? "n/a"}
-                </Typography>
               </Stack>
+              <Grid container spacing={1} sx={{ mt: 1 }}>
+                <Grid item xs={4}>
+                  <Typography variant="caption" color="text.secondary">ROI: {option.estimated_roi?.toFixed(2) ?? "n/a"}</Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="caption" color="text.secondary">Fit: {option.catalog_fit_score ?? "n/a"}</Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="caption" color="text.secondary">Risk: {option.risk_level ?? "n/a"}</Typography>
+                </Grid>
+              </Grid>
             </CardContent>
           </Card>
         ))}
@@ -264,428 +256,329 @@ function ScorecardPanel({ response }: { response: PublicResponseContract }) {
   const { scorecard, meta } = response;
 
   return (
-    <Stack spacing={2.5} data-testid="scorecard-panel">
+    <Stack spacing={3} data-testid="scorecard-panel">
       <Box>
-        <Typography variant="h5">Scorecard</Typography>
-        <Typography color="text.secondary">{scorecard.title}</Typography>
+        <Typography variant="h6" fontWeight="bold">{scorecard.title}</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase" }}>
+          {scorecard.query_type.replace(/_/g, " ")}
+        </Typography>
       </Box>
-      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+
+      <Stack direction="row" spacing={2}>
         <MetricCard label="Recommendation" value={scorecard.recommendation ?? "Pending"} />
-        <MetricCard label="Estimated ROI" value={scorecard.estimated_roi?.toFixed(2) ?? "n/a"} />
-        <MetricCard
-          label="Catalog Fit"
-          value={scorecard.catalog_fit_score?.toFixed(0) ?? "n/a"}
-        />
+        <MetricCard label="Est. ROI" value={scorecard.estimated_roi?.toFixed(2) ?? "n/a"} />
       </Stack>
-      <Card variant="outlined" sx={{ borderRadius: 4 }}>
-        <CardContent>
-          <Typography variant="overline" color="text.secondary">
-            Analyst Confidence
-          </Typography>
-          <Typography variant="h6" sx={{ mt: 1 }}>
-            {Math.round(meta.confidence * 100)}%
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={meta.confidence * 100}
-            sx={{ mt: 1.5, height: 10, borderRadius: 999 }}
-          />
-          {meta.review_required ? (
-            <Alert severity="warning" sx={{ mt: 2 }} data-testid="review-required">
-              Manual review required before decision finalization.
-            </Alert>
-          ) : null}
-          {meta.warnings.map((warning) => (
-            <Alert key={warning} severity="warning" sx={{ mt: 2 }}>
-              {warning}
-            </Alert>
-          ))}
-        </CardContent>
-      </Card>
-      {scorecard.risk_flags.length > 0 ? (
-        <Card variant="outlined" sx={{ borderRadius: 4 }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Risks
-            </Typography>
-            <Stack spacing={1.5}>
-              {scorecard.risk_flags.map((flag) => (
-                <Box key={flag.code}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Chip label={flag.severity} size="small" />
-                    <Typography variant="subtitle2">{flag.code}</Typography>
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-                    {flag.summary}
-                  </Typography>
-                </Box>
-              ))}
-            </Stack>
-          </CardContent>
-        </Card>
-      ) : null}
-      {scorecard.comparison ? <ComparisonView comparison={scorecard.comparison} /> : null}
+
+      <Box>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+          <Typography variant="subtitle2">System Confidence</Typography>
+          <Typography variant="subtitle2" fontWeight="bold">{Math.round(meta.confidence * 100)}%</Typography>
+        </Stack>
+        <LinearProgress
+          variant="determinate"
+          value={meta.confidence * 100}
+          sx={{ height: 6, borderRadius: 3 }}
+        />
+        {meta.review_required && (
+          <Alert severity="warning" sx={{ mt: 2, py: 0 }} icon={false} data-testid="review-required">
+            <Typography variant="caption">Manual review required.</Typography>
+          </Alert>
+        )}
+        {meta.warnings.map((warning) => (
+          <Alert key={warning} severity="warning" sx={{ mt: 1, py: 0 }} icon={false}>
+            <Typography variant="caption">{warning}</Typography>
+          </Alert>
+        ))}
+      </Box>
+
+      {scorecard.risk_flags.length > 0 && (
+        <Box>
+          <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1 }}>Risk Flags</Typography>
+          <Stack spacing={1}>
+            {scorecard.risk_flags.map((flag) => (
+              <Stack key={flag.code} direction="row" spacing={1} alignItems="center">
+                <Chip label={flag.severity} size="small" color={flag.severity === "HIGH" || flag.severity === "BLOCKER" ? "error" : "warning"} sx={{ height: 18, fontSize: "0.65rem" }} />
+                <Typography variant="body2">{flag.summary}</Typography>
+              </Stack>
+            ))}
+          </Stack>
+        </Box>
+      )}
+
+      {scorecard.comparison && <ComparisonView comparison={scorecard.comparison} />}
     </Stack>
   );
 }
 
 function Workspace({ authSession, onLogout }: { authSession: AuthSession; onLogout: () => void }) {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
-  const [sessionsLoading, setSessionsLoading] = useState(true);
-  const [sessionsError, setSessionsError] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<ChatMessageRecord[]>([]);
   const [evaluations, setEvaluations] = useState<PersistedEvaluationRecord[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState<string | null>(null);
   const [activeEvaluationId, setActiveEvaluationId] = useState<string | null>(null);
 
   const [messageInput, setMessageInput] = useState("");
   const [queryType, setQueryType] = useState<QueryType>("original_eval");
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const historyRequestRef = useRef(0);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const activeResponse = useMemo(() => {
-    if (evaluations.length === 0) {
-      return null;
-    }
-    if (activeEvaluationId === null) {
-      return evaluations[0].response;
-    }
-    const selected = evaluations.find((item) => item.id === activeEvaluationId);
+    if (evaluations.length === 0) return null;
+    const selected = activeEvaluationId 
+      ? evaluations.find((item) => item.id === activeEvaluationId)
+      : evaluations[0];
     return selected?.response ?? evaluations[0].response;
   }, [activeEvaluationId, evaluations]);
 
   const refreshSessions = useCallback(async () => {
-    setSessionsError(null);
-    setSessionsLoading(true);
     try {
       const nextSessions = await listSessions();
       setSessions(nextSessions);
-      setActiveSessionId((previous) => {
-        if (previous && nextSessions.some((session) => session.id === previous)) {
-          return previous;
-        }
-        return nextSessions[0]?.id ?? null;
-      });
+      if (!activeSessionId && nextSessions.length > 0) {
+        setActiveSessionId(nextSessions[0].id);
+      }
     } catch (err) {
-      setSessionsError(err instanceof Error ? err.message : "Failed to load sessions");
-    } finally {
-      setSessionsLoading(false);
+      console.error("Failed to load sessions", err);
     }
-  }, []);
+  }, [activeSessionId]);
 
   const loadSessionHistory = useCallback(async (sessionId: string) => {
     const requestId = ++historyRequestRef.current;
     setHistoryLoading(true);
-    setHistoryError(null);
-    setMessages([]);
-    setEvaluations([]);
-    setActiveEvaluationId(null);
     try {
       const [messagesResponse, evaluationsResponse] = await Promise.all([
         getSessionMessages(sessionId),
         getSessionEvaluations(sessionId),
       ]);
-      if (requestId !== historyRequestRef.current) {
-        return;
-      }
+      if (requestId !== historyRequestRef.current) return;
       setMessages(messagesResponse.messages);
       setEvaluations(evaluationsResponse.evaluations);
       setActiveEvaluationId(evaluationsResponse.evaluations[0]?.id ?? null);
     } catch (err) {
-      if (requestId !== historyRequestRef.current) {
-        return;
-      }
-      setMessages([]);
-      setEvaluations([]);
-      setActiveEvaluationId(null);
-      setHistoryError(err instanceof Error ? err.message : "Failed to load session history");
+      console.error("Failed to load history", err);
     } finally {
-      if (requestId === historyRequestRef.current) {
-        setHistoryLoading(false);
-      }
+      if (requestId === historyRequestRef.current) setHistoryLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    void refreshSessions();
-  }, [refreshSessions]);
+  useEffect(() => { void refreshSessions(); }, [refreshSessions]);
 
   useEffect(() => {
-    if (!activeSessionId) {
-      setMessages([]);
-      setEvaluations([]);
-      setActiveEvaluationId(null);
-      setHistoryError(null);
-      return;
-    }
-    void loadSessionHistory(activeSessionId);
+    if (activeSessionId) void loadSessionHistory(activeSessionId);
   }, [activeSessionId, loadSessionHistory]);
 
+  useEffect(() => {
+    if (typeof chatEndRef.current?.scrollIntoView === "function") {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   const handleCreateSession = async () => {
-    setSessionsError(null);
     try {
       const created = await createSession();
-      await refreshSessions();
+      const summary: SessionSummary = {
+        id: created.session.id,
+        title: created.session.title,
+        comparison_enabled: created.session.comparison_enabled,
+        created_at: created.session.created_at,
+        updated_at: created.session.updated_at,
+        message_count: 0,
+        latest_query_type: null,
+      };
+      setSessions((prev) => [summary, ...prev]);
       setActiveSessionId(created.session.id);
     } catch (err) {
-      setSessionsError(err instanceof Error ? err.message : "Failed to create session");
+      console.error("Failed to create session", err);
     }
   };
 
   const handleSubmitMessage = async () => {
     const trimmed = messageInput.trim();
-    if (!trimmed) {
-      return;
-    }
+    if (!trimmed || submitting) return;
 
-    setSubmitError(null);
     setSubmitting(true);
     try {
       let sessionId = activeSessionId;
       if (!sessionId) {
-        const created = await createSession({ title: trimmed.slice(0, 64) });
+        const created = await createSession({ title: trimmed.slice(0, 32) });
         sessionId = created.session.id;
         setActiveSessionId(sessionId);
       }
       await sendMessage(sessionId, { message: trimmed, query_type: queryType });
       setMessageInput("");
-      await refreshSessions();
       await loadSessionHistory(sessionId);
+      void refreshSessions();
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to send message");
+      console.error("Failed to send message", err);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background:
-          "linear-gradient(180deg, rgba(250,248,241,0.96) 0%, rgba(233,241,238,0.98) 100%)",
-        px: { xs: 2, md: 3 },
-        py: { xs: 2, md: 3 },
-      }}
-    >
-      <Stack spacing={3}>
-        <Card
-          sx={{
-            borderRadius: 6,
-            background:
-              "linear-gradient(135deg, rgba(17,94,89,0.96) 0%, rgba(12,61,74,0.96) 100%)",
-            color: "common.white",
-          }}
-        >
-          <CardContent>
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={2}
-              justifyContent="space-between"
-              alignItems={{ xs: "flex-start", md: "center" }}
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", bgcolor: "background.default" }}>
+      {/* Header */}
+      <Box sx={{ 
+        height: 64, 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "space-between", 
+        px: 3, 
+        borderBottom: "1px solid", 
+        borderColor: "divider",
+        bgcolor: "background.paper",
+        zIndex: 1100
+      }}>
+        <Typography variant="h6" fontWeight="bold" color="primary">StreamLogic AI</Typography>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Typography variant="body2" color="text.secondary">{authSession.user.username}</Typography>
+          <IconButton size="small" onClick={onLogout}><LogoutIcon fontSize="small" /></IconButton>
+        </Stack>
+      </Box>
+
+      <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        {/* Sidebar */}
+        <Box sx={{ width: 280, borderRight: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", bgcolor: "grey.50" }}>
+          <Box sx={{ p: 2 }}>
+            <Button 
+              fullWidth 
+              variant="outlined" 
+              startIcon={<AddIcon />} 
+              onClick={handleCreateSession}
+              sx={{ borderRadius: 2, textTransform: "none" }}
+              data-testid="create-session"
             >
-              <Box>
-                <Typography variant="overline" sx={{ opacity: 0.8 }}>
-                  Protected Workspace
-                </Typography>
-                <Typography variant="h3" sx={{ mt: 1 }}>
-                  Authenticated Decision Support
-                </Typography>
-                <Typography sx={{ mt: 1.5, maxWidth: 760, opacity: 0.86 }}>
-                  The frontend renders backend-validated `answer`, `scorecard`, `evidence`, and
-                  minimal `meta` fields only.
+              New Session
+            </Button>
+          </Box>
+          <Box sx={{ flex: 1, overflowY: "auto" }}>
+            <List sx={{ px: 1 }} data-testid="session-list">
+              {sessions.map((session) => (
+                <ListItemButton
+                  key={session.id}
+                  selected={session.id === activeSessionId}
+                  onClick={() => setActiveSessionId(session.id)}
+                  sx={{ borderRadius: 2, mb: 0.5 }}
+                  data-testid={`session-tab-${session.id}`}
+                >
+                  <ListItemText
+                    primary={session.title ?? "Untitled Session"}
+                    primaryTypographyProps={{ variant: "body2", fontWeight: session.id === activeSessionId ? "bold" : "medium", noWrap: true }}
+                    secondary={session.latest_query_type?.replace(/_/g, " ") ?? "No activity"}
+                    secondaryTypographyProps={{ variant: "caption", noWrap: true }}
+                  />
+                </ListItemButton>
+              ))}
+            </List>
+          </Box>
+        </Box>
+
+        {/* Chat Area */}
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
+          <Box sx={{ flex: 1, overflowY: "auto", p: 3, display: "flex", flexDirection: "column" }}>
+            <Stack spacing={3}>
+              {messages.map((msg) => (
+                <Box key={msg.id} sx={{ 
+                  display: "flex", 
+                  flexDirection: "column",
+                  alignItems: msg.role === "user" ? "flex-end" : "start",
+                  maxWidth: "90%",
+                  alignSelf: msg.role === "user" ? "flex-end" : "start"
+                }}>
+                  <Stack direction="row" spacing={1} alignItems="flex-start">
+                    {msg.role === "assistant" && <SmartToyIcon color="primary" sx={{ mt: 1, fontSize: 20 }} />}
+                    <Box sx={{ 
+                      p: 2, 
+                      borderRadius: 3, 
+                      bgcolor: msg.role === "user" ? "primary.main" : "background.paper",
+                      color: msg.role === "user" ? "primary.contrastText" : "text.primary",
+                      boxShadow: msg.role === "user" ? "none" : "0 2px 8px rgba(0,0,0,0.05)",
+                      border: msg.role === "user" ? "none" : "1px solid",
+                      borderColor: "divider"
+                    }}>
+                      <Typography variant="body2" data-testid={msg.role === "assistant" ? "assistant-answer" : undefined}>
+                        {msg.message_text}
+                      </Typography>
+                    </Box>
+                    {msg.role === "user" && <PersonIcon color="action" sx={{ mt: 1, fontSize: 20 }} />}
+                  </Stack>
+                </Box>
+              ))}
+              <div ref={chatEndRef} />
+            </Stack>
+            {messages.length === 0 && !historyLoading && (
+              <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.5 }}>
+                <Stack alignItems="center" spacing={1}>
+                  <ChatBubbleOutlineIcon sx={{ fontSize: 48 }} />
+                  <Typography>Start a new analysis by asking a question.</Typography>
+                </Stack>
+              </Box>
+            )}
+          </Box>
+
+          <Box sx={{ p: 3, borderTop: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                select
+                size="small"
+                value={queryType}
+                onChange={(e) => setQueryType(e.target.value as QueryType)}
+                sx={{ width: 200 }}
+                inputProps={{ "data-testid": "query-type" }}
+              >
+                {QUERY_TYPE_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Ask about a project, risk, or ROI..."
+                value={messageInput}
+                disabled={submitting}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSubmitMessage()}
+                inputProps={{ "data-testid": "chat-input" }}
+              />
+              <Button 
+                variant="contained" 
+                disabled={submitting} 
+                onClick={handleSubmitMessage}
+                sx={{ px: 4 }}
+                data-testid="chat-submit"
+              >
+                {submitting ? "..." : "Send"}
+              </Button>
+            </Stack>
+          </Box>
+        </Box>
+
+        {/* Analysis Panel */}
+        <Box sx={{ width: 400, borderLeft: "1px solid", borderColor: "divider", display: "flex", flexDirection: "column", bgcolor: "background.paper" }}>
+          <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", gap: 1 }}>
+            <InsightsIcon color="primary" />
+            <Typography variant="subtitle1" fontWeight="bold">Insights & Analysis</Typography>
+          </Box>
+          <Box sx={{ flex: 1, overflowY: "auto", p: 3 }}>
+            {activeResponse ? (
+              <Stack spacing={4}>
+                <ScorecardPanel response={activeResponse} />
+                <Divider />
+                <EvidencePanel evidence={activeResponse.evidence} />
+              </Stack>
+            ) : (
+              <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", px: 4 }} data-testid="empty-response">
+                <Typography color="text.secondary" variant="body2">
+                  Send a message to view detailed scorecard and evidence analysis.
                 </Typography>
               </Box>
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <Chip
-                  label={authSession.user.username}
-                  sx={{ bgcolor: "rgba(255,255,255,0.12)", color: "common.white" }}
-                />
-                <Button variant="outlined" color="inherit" onClick={onLogout}>
-                  Log Out
-                </Button>
-              </Stack>
-            </Stack>
-          </CardContent>
-        </Card>
-
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "280px minmax(0, 1fr) 380px" },
-            gap: 2,
-            alignItems: "start",
-          }}
-        >
-          <Card variant="outlined" sx={{ borderRadius: 5 }}>
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                <Typography variant="h6">Sessions</Typography>
-                <Button size="small" onClick={handleCreateSession} data-testid="create-session">
-                  New
-                </Button>
-              </Stack>
-              {sessionsError ? <Alert severity="error">{sessionsError}</Alert> : null}
-              {sessionsLoading ? <LinearProgress /> : null}
-              <List disablePadding data-testid="session-list">
-                {sessions.map((session) => (
-                  <ListItemButton
-                    key={session.id}
-                    selected={session.id === activeSessionId}
-                    onClick={() => setActiveSessionId(session.id)}
-                    data-testid={`session-tab-${session.id}`}
-                    sx={{ borderRadius: 3, mb: 1 }}
-                  >
-                    <ListItemText
-                      primary={session.title ?? "Untitled Session"}
-                      secondary={session.latest_query_type ?? "No evaluations yet"}
-                    />
-                  </ListItemButton>
-                ))}
-              </List>
-              {!sessionsLoading && sessions.length === 0 ? (
-                <Typography color="text.secondary" data-testid="empty-session-history">
-                  No sessions yet. Create one or send a message to start.
-                </Typography>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          <Stack spacing={2}>
-            <Card variant="outlined" sx={{ borderRadius: 5 }}>
-              <CardContent>
-                <Typography variant="h5" data-testid="chat-timeline">
-                  Chat Timeline
-                </Typography>
-                <Typography color="text.secondary" sx={{ mt: 0.75, mb: 2 }}>
-                  Session-backed conversation history
-                </Typography>
-                {historyError ? <Alert severity="error">{historyError}</Alert> : null}
-                {historyLoading ? <LinearProgress sx={{ mb: 2 }} /> : null}
-                <Stack spacing={2.5}>
-                  {messages.map((message) => (
-                    <Box
-                      key={message.id}
-                      sx={{
-                        alignSelf: message.role === "user" ? "flex-end" : "flex-start",
-                        maxWidth: "85%",
-                      }}
-                    >
-                      <Card
-                        sx={{
-                          borderRadius: 4,
-                          bgcolor: message.role === "user" ? "primary.main" : "background.paper",
-                          color: message.role === "user" ? "primary.contrastText" : "text.primary",
-                        }}
-                      >
-                        <CardContent>
-                          <Typography variant="overline" sx={{ opacity: 0.7 }}>
-                            {message.role}
-                          </Typography>
-                          <Typography sx={{ mt: 0.75 }}>{message.message_text}</Typography>
-                        </CardContent>
-                      </Card>
-                    </Box>
-                  ))}
-                  {messages.length === 0 && !historyLoading ? (
-                    <Typography color="text.secondary">No messages in this session yet.</Typography>
-                  ) : null}
-                </Stack>
-                <Divider sx={{ my: 2.5 }} />
-                {submitError ? <Alert severity="error">{submitError}</Alert> : null}
-                <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-                  <TextField
-                    select
-                    label="Query Type"
-                    value={queryType}
-                    onChange={(event) => setQueryType(event.target.value as QueryType)}
-                    sx={{ minWidth: { xs: "100%", md: 240 } }}
-                    inputProps={{ "data-testid": "query-type" }}
-                  >
-                    {QUERY_TYPE_OPTIONS.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
-                    fullWidth
-                    label="Ask a question"
-                    value={messageInput}
-                    disabled={submitting}
-                    onChange={(event) => setMessageInput(event.target.value)}
-                    inputProps={{ "data-testid": "chat-input" }}
-                  />
-                  <Button
-                    variant="contained"
-                    disabled={submitting}
-                    onClick={handleSubmitMessage}
-                    data-testid="chat-submit"
-                  >
-                    {submitting ? "Sending..." : "Send"}
-                  </Button>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Stack>
-
-          <Stack spacing={2}>
-            <Card variant="outlined" sx={{ borderRadius: 5 }}>
-              <CardContent>
-                <Typography variant="h6" sx={{ mb: 1.5 }}>
-                  Evaluations
-                </Typography>
-                <List disablePadding data-testid="evaluation-list">
-                  {evaluations.map((evaluation) => (
-                    <ListItemButton
-                      key={evaluation.id}
-                      selected={evaluation.id === activeEvaluationId}
-                      onClick={() => setActiveEvaluationId(evaluation.id)}
-                      sx={{ borderRadius: 3, mb: 1 }}
-                    >
-                      <ListItemText
-                        primary={evaluation.response.scorecard.title}
-                        secondary={evaluation.response.scorecard.query_type}
-                      />
-                    </ListItemButton>
-                  ))}
-                </List>
-                {evaluations.length === 0 ? (
-                  <Typography color="text.secondary">
-                    No evaluations yet for the current session.
-                  </Typography>
-                ) : null}
-              </CardContent>
-            </Card>
-            {activeResponse ? (
-              <>
-                <Card variant="outlined" sx={{ borderRadius: 5 }}>
-                  <CardContent>
-                    <Typography variant="h5" sx={{ mb: 1.5 }}>
-                      Answer
-                    </Typography>
-                    <Typography data-testid="assistant-answer">{activeResponse.answer}</Typography>
-                  </CardContent>
-                </Card>
-                <ScorecardPanel response={activeResponse} />
-                <EvidencePanel evidence={activeResponse.evidence} />
-              </>
-            ) : (
-              <Card variant="outlined" sx={{ borderRadius: 5 }}>
-                <CardContent>
-                  <Typography color="text.secondary" data-testid="empty-response">
-                    No response available yet. Send a message to evaluate.
-                  </Typography>
-                </CardContent>
-              </Card>
             )}
-          </Stack>
+          </Box>
         </Box>
-      </Stack>
+      </Box>
     </Box>
   );
 }
@@ -711,35 +604,21 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const onAuthExpired = () => {
-      handleLogout();
-    };
+    const onAuthExpired = () => handleLogout();
     window.addEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
-    return () => {
-      window.removeEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
-    };
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
   }, [handleLogout]);
 
-  if (!hydrated) {
-    return <LinearProgress />;
-  }
+  if (!hydrated) return <LinearProgress />;
 
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={
-          <LoginPage isAuthenticated={authSession !== null} onLogin={handleLogin} />
-        }
-      />
-      <Route
-        path="/app"
-        element={
-          <ProtectedRoute isAuthenticated={authSession !== null}>
-            <Workspace authSession={authSession!} onLogout={handleLogout} />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/login" element={<LoginPage isAuthenticated={authSession !== null} onLogin={handleLogin} />} />
+      <Route path="/app" element={
+        <ProtectedRoute isAuthenticated={authSession !== null}>
+          <Workspace authSession={authSession!} onLogout={handleLogout} />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<Navigate to={authSession !== null ? "/app" : "/login"} replace />} />
     </Routes>
   );
