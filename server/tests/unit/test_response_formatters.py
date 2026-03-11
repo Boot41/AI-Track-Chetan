@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 from agent.app.formatters import format_public_response
 from agent.app.formatters.evidence_formatter import format_evidence
 from agent.app.formatters.scorecard_formatter import format_scorecard
@@ -176,6 +178,8 @@ def test_response_formatter_comparison_keeps_stable_envelope() -> None:
         },
     )
     assert set(payload) == {"answer", "scorecard", "evidence", "meta"}
-    assert payload["scorecard"]["scorecard_type"] == "comparison"
-    assert payload["scorecard"]["comparison"] is not None
-    assert set(payload["meta"]) == {"warnings", "confidence", "review_required"}
+    scorecard = cast(dict[str, Any], payload["scorecard"])
+    meta = cast(dict[str, Any], payload["meta"])
+    assert scorecard["scorecard_type"] == "comparison"
+    assert scorecard["comparison"] is not None
+    assert set(meta) == {"warnings", "confidence", "review_required"}

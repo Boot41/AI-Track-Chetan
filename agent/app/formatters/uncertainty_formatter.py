@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from agent.app.schemas.orchestration import OrchestrationResult
 
 LOW_CONFIDENCE_THRESHOLD = 0.55
@@ -12,11 +14,11 @@ def _bounded(value: float) -> float:
 
 
 def _evidence_confidence(evidence: list[dict[str, object]]) -> tuple[float, int]:
-    confidences = [
-        float(item["confidence_score"])
-        for item in evidence
-        if isinstance(item.get("confidence_score"), (float, int))
-    ]
+    confidences: list[float] = []
+    for item in evidence:
+        score: Any = item.get("confidence_score")
+        if isinstance(score, (float, int)):
+            confidences.append(float(score))
     if not confidences:
         return (0.0, 0)
     return (sum(confidences) / len(confidences), len(confidences))

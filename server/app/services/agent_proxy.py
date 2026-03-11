@@ -30,7 +30,7 @@ def _ensure_repo_root_on_path() -> None:
 
 def _to_orchestrator_session_state(
     state: SessionState | None,
-) -> dict[str, object] | None:
+) -> dict[str, Any] | None:
     if state is None:
         return None
     payload = {
@@ -57,9 +57,7 @@ def _to_orchestrator_session_state(
             else None
         ),
         "retrieval_context": state.retrieval_context,
-        "conversation_intent_history": [
-            item.value for item in state.conversation_intent_history
-        ],
+        "conversation_intent_history": [item.value for item in state.conversation_intent_history],
         "comparison_state": (
             {
                 "option_a": {
@@ -72,9 +70,7 @@ def _to_orchestrator_session_state(
                     "label": state.comparison_state.option_b.label,
                     "query_type": state.comparison_state.option_b.query_type.value,
                 },
-                "comparison_axes": [
-                    axis.value for axis in state.comparison_state.comparison_axes
-                ],
+                "comparison_axes": [axis.value for axis in state.comparison_state.comparison_axes],
                 "active_option": state.comparison_state.active_option,
             }
             if state.comparison_state is not None
