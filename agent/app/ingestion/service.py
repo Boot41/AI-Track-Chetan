@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -91,6 +92,7 @@ class DocumentIngestionService:
                             "manifest_doc_type": registration.manifest_doc_type,
                             "primary_use": registration.primary_use,
                             "expected_entities": registration.expected_entities,
+                            "indexed_at": datetime.now(UTC).replace(tzinfo=None).isoformat(),
                         },
                     )
                     facts = self._fact_extractor.extract(classification, parsed.sections)

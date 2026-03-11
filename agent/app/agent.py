@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from google.adk.agents import Agent
-from typing import cast
 
 from agent.app.agents.orchestrator import AgentOrchestrator
 from agent.app.formatters import format_public_response
@@ -21,7 +20,7 @@ async def orchestrate_query(
             context=TrustedRequestContext(user_id=user_id, session_id=session_id),
         )
     )
-    return cast(dict[str, object], format_public_response(result))
+    return format_public_response(result)
 
 
 root_agent = Agent(
@@ -48,4 +47,4 @@ async def run_orchestrator(
             context=TrustedRequestContext(user_id=user_id, session_id=session_id),
         )
     )
-    return cast(dict[str, object], format_public_response(result))
+    return format_public_response(result)

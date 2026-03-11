@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 import hashlib
 from pathlib import Path
+from typing import Any, cast
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -45,6 +46,19 @@ class OperationalDataWorkflow:
             return None
         return datetime.fromtimestamp(ts, UTC).replace(tzinfo=None)
 
+    @staticmethod
+    def _indexed_at_from_metadata(metadata: object) -> datetime | None:
+        if not isinstance(metadata, dict):
+            return None
+        raw_value = metadata.get("indexed_at")
+        if not isinstance(raw_value, str) or not raw_value:
+            return None
+        try:
+            parsed = datetime.fromisoformat(raw_value)
+        except ValueError:
+            return None
+        return parsed.replace(tzinfo=None)
+
     async def corpus_index_state(self) -> CorpusIndexState:
         warnings: list[str] = []
         try:
@@ -63,6 +77,7 @@ class OperationalDataWorkflow:
                             documents.c.id,
                             documents.c.ingestion_status,
                             documents.c.source_path,
+                            documents.c.source_metadata,
                         ).order_by(documents.c.id.asc())
                     )
                 ).all()
@@ -74,21 +89,25 @@ class OperationalDataWorkflow:
                 warnings=["Could not load document index state from persistence."],
             )
 
-        source_mtims = [
-            mtime
-            for _doc_id, _status, source_path in status_rows
-            if (mtime := self._safe_source_mtime(source_path)) is not None
-        ]
-        last_indexed_at = max(source_mtims, default=None)
+        indexed_times: list[datetime] = []
+        for _doc_id, _status, source_path, source_metadata in status_rows:
+            metadata_time = self._indexed_at_from_metadata(cast(dict[str, Any] | None, source_metadata))
+            if metadata_time is not None:
+                indexed_times.append(metadata_time)
+                continue
+            source_mtime = self._safe_source_mtime(source_path)
+            if source_mtime is not None:
+                indexed_times.append(source_mtime)
+        last_indexed_at = max(indexed_times, default=None)
         payload = "|".join(
             f"{doc_id}:{status}:{source_path}"
-            for doc_id, status, source_path in status_rows
+            for doc_id, status, source_path, _source_metadata in status_rows
         )
         fingerprint_seed = payload if payload else "empty-index"
         fingerprint = hashlib.sha1(fingerprint_seed.encode("utf-8")).hexdigest()[:16]
         failed = [
             doc_id
-            for doc_id, status, _source_path in status_rows
+            for doc_id, status, _source_path, _source_metadata in status_rows
             if status in {IngestionStatus.FAILED.value, IngestionStatus.PARTIAL.value}
         ]
         if failed:
@@ -112,7 +131,7 @@ class OperationalDataWorkflow:
             async with self._session_factory() as session:
                 rows = (
                     await session.execute(
-                        select(documents.c.source_path).where(
+                        select(documents.c.source_path, documents.c.source_metadata).where(
                             documents.c.filename.ilike("%comp_titles%")
                         )
                     )
@@ -123,9 +142,15 @@ class OperationalDataWorkflow:
 
         refreshed_at = max(
             (
-                mtime
+                candidate_time
                 for row in rows
-                if (mtime := self._safe_source_mtime(row.source_path)) is not None
+                if (
+                    candidate_time := (
+                        self._indexed_at_from_metadata(cast(dict[str, Any] | None, row.source_metadata))
+                        or self._safe_source_mtime(row.source_path)
+                    )
+                )
+                is not None
             ),
             default=None,
         )
