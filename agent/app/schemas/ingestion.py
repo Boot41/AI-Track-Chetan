@@ -35,6 +35,8 @@ class RetrievalMethod(StrEnum):
     FTS = "fts"
     VECTOR = "vector"
     HYBRID = "hybrid"
+    SQL = "sql"
+    DERIVED = "derived"
 
 
 class RawDocumentRegistration(BaseModel):
