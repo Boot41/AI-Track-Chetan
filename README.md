@@ -274,6 +274,21 @@ The current standalone agent entrypoint is `agent/my_agent/agent.py`.
 
 Use the ADK command that matches your local setup once the agent service is wired for standalone execution in this repo.
 
+## Docker Compose
+
+Run all services (PostgreSQL, backend API, frontend, agent API, ADK Web UI):
+
+```bash
+docker compose up --build
+```
+
+Service URLs:
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- Agent API: `http://localhost:8020`
+- ADK Web UI: `http://localhost:8001`
+
 ## Testing Strategy
 
 Testing must cover backend, agent service, and frontend.
@@ -372,6 +387,7 @@ The standalone agent service should not directly trust browser clients for privi
 | `ENV` | `development` | development / test / production |
 | `DATABASE_URL` | `postgresql+asyncpg://postgres:postgres@localhost:5433/app_scaffold` | Database connection |
 | `SECRET_KEY` | `app-scaffold-dev-secret` | JWT signing secret |
+| `AGENT_SERVICE_URL` | `http://localhost:8020` | Standalone agent service base URL |
 
 ### Agent
 

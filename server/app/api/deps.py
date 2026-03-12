@@ -23,4 +23,4 @@ def settings(s: Settings = Depends(get_settings)) -> Settings:
 def agent_service_client(s: Settings = Depends(settings)) -> AgentServiceClient:
     if s.env == "test":
         return StubAgentServiceClient()
-    return OrchestratorAgentServiceClient()
+    return OrchestratorAgentServiceClient(base_url=s.agent_service_url)

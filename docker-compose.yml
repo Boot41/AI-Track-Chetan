@@ -10,20 +10,59 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app_scaffold"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  agent-api:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_scaffold
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GOOGLE_GENAI_USE_VERTEXAI: "false"
+    ports:
+      - "8020:8020"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  adk-web:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_scaffold
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GOOGLE_GENAI_USE_VERTEXAI: "false"
+    command: ["adk", "web", "--host", "0.0.0.0", "--port", "8001", "agent"]
+    ports:
+      - "8001:8001"
+    depends_on:
+      db:
+        condition: service_healthy
 
   api:
     build: ./server
     environment:
       ENV: development
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_scaffold
+      AGENT_SERVICE_URL: http://agent-api:8020
       ENABLE_PGVECTOR: "1"
       SECRET_KEY: app-scaffold-secret-change-in-prod
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       GOOGLE_GENAI_USE_VERTEXAI: "false"
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      agent-api:
+        condition: service_started
 
   client:
     build: ./client
