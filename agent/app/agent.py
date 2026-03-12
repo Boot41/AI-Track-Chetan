@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 from google.adk.agents import Agent
 
 from .agents.orchestrator import AgentOrchestrator
 from .agents.query_classifier import QueryClassifier
 from .agents.routing import ROUTING_MATRIX
+from .config import get_settings
 from .formatters import format_public_response
 from .persistence.session import get_sessionmaker
 from .schemas.orchestration import (
@@ -28,14 +30,29 @@ from .tools import (
     SqlRetrievalTool,
 )
 
+AGENT_MODEL = get_settings().agent_model
 
-def _infer_pitch_id_from_message(text: str) -> str | None:
+
+def _infer_pitch_ids_from_message(text: str | None) -> list[str]:
+    if not text:
+        return []
     normalized = text.strip().lower()
-    if "shadow protocol" in normalized:
-        return "pitch_shadow_protocol"
-    if "red harbor" in normalized:
-        return "pitch_red_harbor"
-    return None
+    ids = []
+    if "shadow protocol" in normalized or "shadow_protocol" in normalized or "shadowprotocol" in normalized:
+        ids.append("pitch_shadow_protocol")
+    if "red harbor" in normalized or "red_harbor" in normalized or "redharbor" in normalized:
+        ids.append("pitch_red_harbor")
+    
+    # Check for direct pitch_id patterns
+    for match in re.findall(r"pitch_[a-z0-9_]+", normalized):
+        if match not in ids:
+            ids.append(match)
+    return ids
+
+
+def _infer_pitch_id_from_message(text: str | None) -> str | None:
+    ids = _infer_pitch_ids_from_message(text)
+    return ids[0] if ids else None
 
 
 async def orchestrate_query(
@@ -50,14 +67,17 @@ async def orchestrate_query(
     if tool_context and hasattr(tool_context, "state"):
         session_state_payload = tool_context.state.get("session_state_payload")
     
-    resolved_pitch_id = pitch_id or _infer_pitch_id_from_message(message)
+    # Resolve and normalize pitch IDs
+    pitch_ids = _infer_pitch_ids_from_message(pitch_id) or _infer_pitch_ids_from_message(message)
+    resolved_pitch_id = pitch_ids[0] if pitch_ids else None
+    
     orchestrator = AgentOrchestrator(get_sessionmaker())
     
     state = None
     if session_state_payload:
         from .schemas.orchestration import SessionState as OrchestratorSessionState
         state = OrchestratorSessionState.model_validate(session_state_payload)
-        # Ensure the pitch_id is set if inferred from message
+        # Ensure the pitch_id is set if inferred from message or passed as arg
         if not state.pitch_id and resolved_pitch_id:
             state.pitch_id = resolved_pitch_id
     elif resolved_pitch_id is not None:
@@ -70,7 +90,47 @@ async def orchestrate_query(
             session_state=state,
         )
     )
-    return format_public_response(result)
+
+    response = format_public_response(result)
+
+    # Add a machine-readable summary of ALL evidence for the LLM to see
+    evidence_summary: list[str] = []
+    evidence_items_raw = response.get("evidence")
+    evidence_items = (
+        [item for item in evidence_items_raw if isinstance(item, dict)]
+        if isinstance(evidence_items_raw, list)
+        else []
+    )
+    for item in evidence_items:
+        ref = item.get("source_reference", "unknown")
+        snippet_value = item.get("snippet", "")
+        snippet = snippet_value[:200] if isinstance(snippet_value, str) else ""
+        agent = item.get("used_by_agent", "unknown")
+        evidence_summary.append(f"[{ref}] (via {agent}): {snippet}")
+
+    # Add a clear summary of metrics for the LLM
+    scorecard_raw = response.get("scorecard")
+    scorecard = scorecard_raw if isinstance(scorecard_raw, dict) else {}
+    metrics_summary = (
+        f"OFFICIAL METRICS for {resolved_pitch_id or 'request'}:\n"
+        f"- Recommendation: {scorecard.get('recommendation')}\n"
+        f"- Narrative Score: {scorecard.get('narrative_score')}\n"
+        f"- Projected ROI: {scorecard.get('estimated_roi')}\n"
+        f"- Completion Rate: {scorecard.get('projected_completion_rate')}\n"
+        f"- Risk Level: {scorecard.get('risk_level')}\n"
+        f"- Catalog Fit: {scorecard.get('catalog_fit_score')}\n"
+    )
+
+    # We include this in a field that the LLM will see
+    response["llm_context"] = {
+        "metrics": metrics_summary,
+        "evidence": "\n".join(evidence_summary[:20]),
+        "pitch_id_used": resolved_pitch_id,
+        "all_pitch_ids_detected": pitch_ids,
+        "query_type": response.get("query_type")
+    }
+    
+    return response
 
 
 def classify_query_for_delegation(
@@ -90,9 +150,17 @@ def classify_query_for_delegation(
 
     classifier = QueryClassifier()
     classification = classifier.classify(message, state)
-    route = ROUTING_MATRIX[classification.query_type]
     
-    resolved_pitch_id = pitch_id or (state.pitch_id if state else None) or _infer_pitch_id_from_message(message)
+    # Override classification to COMPARISON if multiple pitch IDs are detected
+    pitch_ids = _infer_pitch_ids_from_message(pitch_id) or (([state.pitch_id] if state.pitch_id else []) if state else []) or _infer_pitch_ids_from_message(message)
+    if len(pitch_ids) >= 2 and classification.query_type != QueryType.COMPARISON:
+        classification.query_type = QueryType.COMPARISON
+        # Update target agents for comparison
+        route = ROUTING_MATRIX[QueryType.COMPARISON]
+        classification.target_agents = route.target_agents
+
+    route = ROUTING_MATRIX[classification.query_type]
+    resolved_pitch_id = pitch_ids[0] if pitch_ids else None
     
     target_to_subagent = {
         AgentTarget.DOCUMENT_RETRIEVAL: "document_retrieval_agent",
@@ -100,6 +168,7 @@ def classify_query_for_delegation(
         AgentTarget.ROI_PREDICTION: "roi_prediction_agent",
         AgentTarget.RISK_CONTRACT_ANALYSIS: "risk_contract_analysis_agent",
         AgentTarget.CATALOG_FIT: "catalog_fit_agent",
+        AgentTarget.COMPARISON_SYNTHESIS: "final_response_agent", # Handle comparison in final synthesis
     }
     recommended_subagents: list[str] = []
     for target in route.target_agents:
@@ -115,7 +184,9 @@ def classify_query_for_delegation(
         "query_type": classification.query_type.value,
         "target_agents": [target.value for target in classification.target_agents],
         "recommended_subagents": recommended_subagents,
+        "pitch_id": resolved_pitch_id,
         "inferred_pitch_id": resolved_pitch_id,
+        "all_detected_pitch_ids": pitch_ids,
     }
 
 
@@ -305,11 +376,12 @@ async def evidence_packaging(
 
 document_retrieval_agent = Agent(
     name="document_retrieval_agent",
-    model="gemini-2.5-flash",
+    model=AGENT_MODEL,
     description="Retrieves relevant document sections and packages evidence.",
     instruction=(
         "Worker-only agent. Do not provide user-facing answers. "
-        "Call `hybrid_document_retrieval` first. Call `evidence_packaging` if needed. "
+        "Call `hybrid_document_retrieval` first (ALWAYS pass the `pitch_id` provided by the orchestrator). "
+        "Call `evidence_packaging` if needed (pass the `pitch_id`). "
         "Then transfer control back to `streamlogic_orchestrator`."
     ),
     tools=[hybrid_document_retrieval, evidence_packaging],
@@ -319,13 +391,13 @@ document_retrieval_agent = Agent(
 
 narrative_analysis_agent = Agent(
     name="narrative_analysis_agent",
-    model="gemini-2.5-flash",
+    model=AGENT_MODEL,
     description="Extracts narrative features from creative materials.",
     instruction=(
         "Worker-only agent. Do not provide user-facing answers. "
-        "Use `hybrid_document_retrieval` to collect relevant scenes/sections, then "
-        "`narrative_feature_extraction` for narrative signals, and "
-        "`evidence_packaging` for traceable citations (use used_by_agent='narrative_analysis'). "
+        "Use `hybrid_document_retrieval` to collect relevant scenes/sections (ALWAYS pass the `pitch_id`), "
+        "then `narrative_feature_extraction` for narrative signals (pass the `pitch_id`), and "
+        "`evidence_packaging` for traceable citations (pass the `pitch_id`). "
         "Then transfer control back to `streamlogic_orchestrator`."
     ),
     tools=[hybrid_document_retrieval, narrative_feature_extraction, evidence_packaging],
@@ -335,13 +407,13 @@ narrative_analysis_agent = Agent(
 
 roi_prediction_agent = Agent(
     name="roi_prediction_agent",
-    model="gemini-2.5-flash",
+    model=AGENT_MODEL,
     description="Retrieves structured metrics for completion, retention, and ROI.",
     instruction=(
         "Worker-only agent. Do not provide user-facing answers. "
-        "Use `sql_retrieval` for structured business metrics, optionally "
-        "`hybrid_document_retrieval` for contextual/comparable evidence, and "
-        "`evidence_packaging` for traceable citations (use used_by_agent='roi_prediction'). "
+        "Use `sql_retrieval` for structured business metrics (ALWAYS pass the `pitch_id`), "
+        "optionally `hybrid_document_retrieval` for contextual evidence (pass the `pitch_id`), and "
+        "`evidence_packaging` for traceable citations (pass the `pitch_id`). "
         "Then transfer control back to `streamlogic_orchestrator`."
     ),
     tools=[sql_retrieval, hybrid_document_retrieval, evidence_packaging],
@@ -351,13 +423,13 @@ roi_prediction_agent = Agent(
 
 risk_contract_analysis_agent = Agent(
     name="risk_contract_analysis_agent",
-    model="gemini-2.5-flash",
+    model=AGENT_MODEL,
     description="Extracts and analyzes contract clauses and rights risk.",
     instruction=(
         "Worker-only agent. Do not provide user-facing answers. "
-        "Use `clause_extraction` for contractual risk clauses, optionally "
-        "`hybrid_document_retrieval` for supporting document context, and "
-        "`evidence_packaging` for traceable citations (use used_by_agent='risk_contract_analysis'). "
+        "Use `clause_extraction` for contractual risk clauses (ALWAYS pass the `pitch_id`), "
+        "optionally `hybrid_document_retrieval` for supporting document context (pass the `pitch_id`), and "
+        "`evidence_packaging` for traceable citations (pass the `pitch_id`). "
         "Then transfer control back to `streamlogic_orchestrator`."
     ),
     tools=[clause_extraction, hybrid_document_retrieval, evidence_packaging],
@@ -367,13 +439,13 @@ risk_contract_analysis_agent = Agent(
 
 catalog_fit_agent = Agent(
     name="catalog_fit_agent",
-    model="gemini-2.5-flash",
+    model=AGENT_MODEL,
     description="Retrieves strategic and comparable evidence for catalog fit signals.",
     instruction=(
         "Worker-only agent. Do not provide user-facing answers. "
-        "Use `hybrid_document_retrieval` for catalog/market narrative evidence, "
-        "`sql_retrieval` for comparable platform metrics when relevant, and "
-        "`evidence_packaging` for traceable citations (use used_by_agent='catalog_fit'). "
+        "Use `hybrid_document_retrieval` for catalog/market narrative evidence (ALWAYS pass the `pitch_id`), "
+        "`sql_retrieval` for comparable platform metrics when relevant (pass the `pitch_id`), and "
+        "`evidence_packaging` for traceable citations (pass the `pitch_id`). "
         "Then transfer control back to `streamlogic_orchestrator`."
     ),
     tools=[hybrid_document_retrieval, sql_retrieval, evidence_packaging],
@@ -383,10 +455,13 @@ catalog_fit_agent = Agent(
 
 final_response_agent = Agent(
     name="final_response_agent",
-    model="gemini-2.5-flash",
+    model=AGENT_MODEL,
     description="Generates the final stable response envelope via orchestrator.",
     instruction=(
-        "Use `orchestrate_query` to generate the final structured response for the user message."
+        "You are a response generator. Your ONLY task is to call the `orchestrate_query` tool "
+        "with the user's message. DO NOT try to answer the user yourself. DO NOT synthesize any "
+        "text before or after calling the tool. After calling `orchestrate_query`, you MUST "
+        "immediately transfer control back to `streamlogic_orchestrator`."
     ),
     tools=[orchestrate_query],
     disallow_transfer_to_peers=True,
@@ -395,18 +470,20 @@ final_response_agent = Agent(
 
 root_agent = Agent(
     name="streamlogic_orchestrator",
-    model="gemini-2.5-flash",
+    model=AGENT_MODEL,
     description="Orchestration shell for StreamLogic AI.",
     instruction=(
         "You are the main orchestrator for StreamLogic AI. Your goal is to provide high-quality, "
         "evidence-backed decision support for OTT content investments.\n\n"
-        "1. Always call `classify_query_for_delegation` first to understand the request and get subagent recommendations.\n"
-        "2. Transfer to the recommended subagents to gather specific analysis (Narrative, ROI, Risk, etc.).\n"
+        "1. Always call `classify_query_for_delegation` first to understand the request, identify the target project (pitch_id), and get subagent recommendations.\n"
+        "2. Transfer to the recommended subagents to gather specific analysis. ALWAYS pass the `pitch_id` you found in step 1 to these subagents.\n"
         "3. Transfer to `final_response_agent` to call `orchestrate_query` and generate the official "
-        "structured scorecard, evidence items, and deterministic metrics required for platform stability.\n"
-        "4. Use the information from the subagents and the `orchestrate_query` output to synthesize a "
-        "thoughtful, professional, and nuanced final response to the user. Do not just repeat the tool's "
-        "summary; provide your own analyst-level perspective on the subtext, nuances, and risks."
+        "structured scorecard, evidence items, and deterministic metrics required for platform stability. ALWAYS pass the `pitch_id` to `orchestrate_query`.\n"
+        "4. Use the information from the subagents AND the `orchestrate_query` output to synthesize a "
+        "thoughtful, professional, and nuanced final response. YOU MUST incorporate the official "
+        "metrics (e.g., ROI, completion rates, catalog fit) from the `orchestrate_query` scorecard "
+        "into your text response. Do not just repeat the tool's summary; provide your own "
+        "analyst-level perspective on the subtext, nuances, and risks."
     ),
     tools=[classify_query_for_delegation],
     sub_agents=[

@@ -124,6 +124,39 @@ class AgentOrchestrator:
             index_state.fingerprint,
         )
         classification = self._classifier.classify(request.message, session_state)
+
+        # Initialize ComparisonState if missing for comparison queries
+        if (
+            classification.query_type == QueryType.COMPARISON
+            and session_state.comparison_state is None
+            and len(classification.all_detected_pitch_ids) >= 2
+        ):
+            from ..schemas.orchestration import ComparisonOption, ComparisonState
+
+            def _query_type_for(pid: str) -> QueryType:
+                if "shadow" in pid:
+                    return QueryType.ORIGINAL_EVAL
+                return QueryType.ACQUISITION_EVAL
+
+            session_state.comparison_state = ComparisonState(
+                option_a=ComparisonOption(
+                    option_id=classification.all_detected_pitch_ids[0],
+                    label=classification.all_detected_pitch_ids[0]
+                    .replace("pitch_", "")
+                    .replace("_", " ")
+                    .title(),
+                    query_type=_query_type_for(classification.all_detected_pitch_ids[0]),
+                ),
+                option_b=ComparisonOption(
+                    option_id=classification.all_detected_pitch_ids[1],
+                    label=classification.all_detected_pitch_ids[1]
+                    .replace("pitch_", "")
+                    .replace("_", " ")
+                    .title(),
+                    query_type=_query_type_for(classification.all_detected_pitch_ids[1]),
+                ),
+            )
+
         route_plan = self.build_route_plan(classification.query_type, session_state)
         context = AgentExecutionContext(
             request=request,
@@ -327,50 +360,62 @@ class AgentOrchestrator:
                         "Comparison query received no option state; evaluated only the active evidence context."
                     )
             elif target == AgentTarget.RECOMMENDATION_ENGINE:
-                narrative_output = result.narrative_output or self._cached_output(
-                    session_state,
-                    CachedOutputName.NARRATIVE,
-                    NarrativeAgentOutput,
+                pass  # Handled below after all loop iterations
+
+        # Compute intermediate scores if their respective outputs are available
+        narrative_output = result.narrative_output or self._cached_output(
+            session_state, CachedOutputName.NARRATIVE, NarrativeAgentOutput
+        )
+        roi_output = result.roi_output or self._cached_output(
+            session_state, CachedOutputName.ROI, RoiAgentOutput
+        )
+        risk_output = result.risk_output or self._cached_output(
+            session_state, CachedOutputName.RISK, RiskAgentOutput
+        )
+        catalog_output = result.catalog_output or self._cached_output(
+            session_state, CachedOutputName.CATALOG, CatalogAgentOutput
+        )
+
+        if roi_output and result.completion_score is None:
+            result.completion_score = self._completion_rate_scorer.score(
+                roi_output.completion_inputs
+            )
+            result.roi_score = self._roi_scorer.score(
+                roi_output.roi_inputs,
+                roi_output.retention_inputs,
+                roi_output.cost_per_view_inputs,
+                result.completion_score,
+            )
+        
+        if risk_output and result.risk_score is None:
+            result.risk_score = self._risk_severity_scorer.score(
+                risk_output.findings
+            )
+            
+        if catalog_output and result.catalog_fit_score is None:
+            result.catalog_fit_score = self._catalog_fit_scorer.score(
+                catalog_output.inputs
+            )
+
+        if AgentTarget.RECOMMENDATION_ENGINE in route_plan.agent_sequence:
+            target = AgentTarget.RECOMMENDATION_ENGINE
+            if (
+                roi_output is None
+                or risk_output is None
+                or catalog_output is None
+            ):
+                result.warnings.append(
+                    "Recommendation engine could not run because one or more specialist outputs were unavailable."
                 )
-                roi_output = result.roi_output or self._cached_output(
-                    session_state,
-                    CachedOutputName.ROI,
-                    RoiAgentOutput,
+            elif (
+                result.roi_score is None
+                or result.risk_score is None
+                or result.catalog_fit_score is None
+            ):
+                result.warnings.append(
+                    "Recommendation engine could not run because one or more deterministic scores were unavailable."
                 )
-                risk_output = result.risk_output or self._cached_output(
-                    session_state,
-                    CachedOutputName.RISK,
-                    RiskAgentOutput,
-                )
-                catalog_output = result.catalog_output or self._cached_output(
-                    session_state,
-                    CachedOutputName.CATALOG,
-                    CatalogAgentOutput,
-                )
-                if (
-                    roi_output is None
-                    or risk_output is None
-                    or catalog_output is None
-                ):
-                    result.warnings.append(
-                        "Recommendation engine could not run because one or more specialist outputs were unavailable."
-                    )
-                    continue
-                result.completion_score = self._completion_rate_scorer.score(
-                    roi_output.completion_inputs
-                )
-                result.roi_score = self._roi_scorer.score(
-                    roi_output.roi_inputs,
-                    roi_output.retention_inputs,
-                    roi_output.cost_per_view_inputs,
-                    result.completion_score,
-                )
-                result.risk_score = self._risk_severity_scorer.score(
-                    risk_output.findings
-                )
-                result.catalog_fit_score = self._catalog_fit_scorer.score(
-                    catalog_output.inputs
-                )
+            else:
                 result.recommendation_result = self._recommendation_engine.recommend(
                     narrative_output.score_inputs if narrative_output is not None else None,
                     result.roi_score,

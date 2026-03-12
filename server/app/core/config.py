@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5433/app_scaffold"
     secret_key: str = "app-scaffold-dev-secret"
     agent_service_url: str = "http://localhost:8020"
+    agent_model: str = "gemini-2.5-flash"
     google_api_key: str = ""
     google_genai_use_vertexai: bool = False
 

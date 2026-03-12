@@ -7,16 +7,13 @@ from typing import Any, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Initialize settings and set environment variables for Google GenAI ASAP
-# This must happen before importing root_agent which initializes the ADK agents
-try:
-    from server.app.core.config import get_settings
-    settings = get_settings()
-    if settings.google_api_key:
-        os.environ["GOOGLE_API_KEY"] = settings.google_api_key
-except ImportError:
-    # If server package is not available, assume ENV is already set
-    pass
+from .config import get_settings
+
+# Initialize settings and set environment variables for Google GenAI ASAP.
+# This must happen before importing root_agent which initializes ADK agents.
+settings = get_settings()
+if settings.google_api_key:
+    os.environ["GOOGLE_API_KEY"] = settings.google_api_key
 
 from .agent import root_agent
 from google.adk.runners import Runner
