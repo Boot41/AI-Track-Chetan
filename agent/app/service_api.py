@@ -18,7 +18,7 @@ except ImportError:
     # If server package is not available, assume ENV is already set
     pass
 
-from agent.app.orchestrator import root_agent
+from .agent import root_agent
 from google.adk.runners import Runner
 from google.adk.sessions.in_memory_session_service import InMemorySessionService
 from google.genai import types
