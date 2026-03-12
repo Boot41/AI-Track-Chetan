@@ -5,13 +5,13 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from agent.app.ingestion.classifiers import DocumentTypeClassifier
-from agent.app.ingestion.extractors import ContractFactExtractor, DocumentRiskExtractor
-from agent.app.ingestion.inventory import RAW_DATA_ROOT, build_ingestion_inventory
-from agent.app.ingestion.parsers import ParserRouter
-from agent.app.persistence.repository import DocumentRepository
-from agent.app.retrieval.embeddings import HashEmbeddingService
-from agent.app.schemas.ingestion import DocumentMetadata, IngestionResult, IngestionStatus
+from app.ingestion.classifiers import DocumentTypeClassifier
+from app.ingestion.extractors import ContractFactExtractor, DocumentRiskExtractor
+from app.ingestion.inventory import RAW_DATA_ROOT, build_ingestion_inventory
+from app.ingestion.parsers import ParserRouter
+from app.persistence.repository import DocumentRepository
+from app.retrieval.embeddings import HashEmbeddingService
+from app.schemas.ingestion import DocumentMetadata, IngestionResult, IngestionStatus
 
 
 class DocumentIngestionService:

@@ -85,6 +85,8 @@
       scorecard."
    3. "What are the top 3 risks in the 'Red Harbor' licensing
       contract?"
+
+      
    4. "Estimate the ROI for 'Shadow Protocol'."
    5. "Compare 'Shadow Protocol' and 'Red Harbor'."
    6. "Who is the main character in 'Shadow Protocol' and what is

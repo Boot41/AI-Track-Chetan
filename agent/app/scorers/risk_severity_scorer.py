@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agent.app.schemas.evaluation import RiskFinding, RiskScore, RiskSeverity
+from app.schemas.evaluation import RiskFinding, RiskScore, RiskSeverity
 
 _RISK_ORDER = {
     RiskSeverity.LOW: 0,

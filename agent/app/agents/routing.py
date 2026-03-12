@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agent.app.schemas.orchestration import (
+from app.schemas.orchestration import (
     AgentTarget,
     CachedOutputName,
     QueryType,

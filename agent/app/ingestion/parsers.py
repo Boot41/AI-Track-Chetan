@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Protocol
 from uuid import NAMESPACE_URL, uuid5
 
-from agent.app.schemas.ingestion import (
+from app.schemas.ingestion import (
     DocumentClassification,
     RawDocumentRegistration,
     SectionRecord,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from agent.app.schemas.ingestion import DocumentType, RetrievalMethod
+from app.schemas.ingestion import DocumentType, RetrievalMethod
 
 
 class RetrievalQuery(BaseModel):

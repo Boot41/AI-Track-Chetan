@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent.app.schemas.orchestration import OrchestrationResult
+from app.schemas.orchestration import OrchestrationResult
 
 LOW_CONFIDENCE_THRESHOLD = 0.55
 REVIEW_REQUIRED_THRESHOLD = 0.45

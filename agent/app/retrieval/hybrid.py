@@ -7,11 +7,11 @@ from typing import Mapping, cast
 from sqlalchemy import Select, bindparam, func, literal, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from agent.app.persistence.tables import document_sections, documents
-from agent.app.retrieval.embeddings import HashEmbeddingService, cosine_similarity
-from agent.app.retrieval.ranking import reciprocal_rank_fusion, rerank_candidates
-from agent.app.schemas.ingestion import DocumentType, RetrievalMethod
-from agent.app.schemas.retrieval import RetrievalCandidate, RetrievalQuery
+from app.persistence.tables import document_sections, documents
+from app.retrieval.embeddings import HashEmbeddingService, cosine_similarity
+from app.retrieval.ranking import reciprocal_rank_fusion, rerank_candidates
+from app.schemas.ingestion import DocumentType, RetrievalMethod
+from app.schemas.retrieval import RetrievalCandidate, RetrievalQuery
 
 
 class HybridRetriever:

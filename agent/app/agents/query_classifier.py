@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 
-from agent.app.agents.routing import ROUTING_MATRIX
-from agent.app.schemas.orchestration import QueryClassification, QueryType, SessionState
+from app.agents.routing import ROUTING_MATRIX
+from app.schemas.orchestration import QueryClassification, QueryType, SessionState
 
 
 class QueryClassifier:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agent.app.schemas.evaluation import CompletionRateInputs, CompletionRateScore
+from app.schemas.evaluation import CompletionRateInputs, CompletionRateScore
 
 
 class CompletionRateScorer:

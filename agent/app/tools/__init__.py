@@ -1,8 +1,8 @@
-from agent.app.tools.clause_extraction import ClauseExtractionTool
-from agent.app.tools.hybrid_document_retrieval import HybridDocumentRetrievalTool
-from agent.app.tools.narrative_feature_extraction import NarrativeFeatureExtractionTool
-from agent.app.tools.provenance import EvidencePackagingTool
-from agent.app.tools.sql_retrieval import SqlRetrievalTool
+from app.tools.clause_extraction import ClauseExtractionTool
+from app.tools.hybrid_document_retrieval import HybridDocumentRetrievalTool
+from app.tools.narrative_feature_extraction import NarrativeFeatureExtractionTool
+from app.tools.provenance import EvidencePackagingTool
+from app.tools.sql_retrieval import SqlRetrievalTool
 
 __all__ = [
     "ClauseExtractionTool",

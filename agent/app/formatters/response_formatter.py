@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from agent.app.formatters.answer_formatter import format_answer
-from agent.app.formatters.evidence_formatter import format_evidence
-from agent.app.formatters.scorecard_formatter import format_scorecard
-from agent.app.formatters.uncertainty_formatter import format_meta
-from agent.app.schemas.orchestration import OrchestrationResult
+from app.formatters.answer_formatter import format_answer
+from app.formatters.evidence_formatter import format_evidence
+from app.formatters.scorecard_formatter import format_scorecard
+from app.formatters.uncertainty_formatter import format_meta
+from app.schemas.orchestration import OrchestrationResult
 
 
 def format_public_response(

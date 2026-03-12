@@ -1,8 +1,8 @@
-from agent.app.ingestion.classifiers import DocumentTypeClassifier
-from agent.app.ingestion.extractors import ContractFactExtractor, DocumentRiskExtractor
-from agent.app.ingestion.inventory import build_ingestion_inventory
-from agent.app.ingestion.parsers import ParserRouter
-from agent.app.ingestion.service import DocumentIngestionService
+from app.ingestion.classifiers import DocumentTypeClassifier
+from app.ingestion.extractors import ContractFactExtractor, DocumentRiskExtractor
+from app.ingestion.inventory import build_ingestion_inventory
+from app.ingestion.parsers import ParserRouter
+from app.ingestion.service import DocumentIngestionService
 
 __all__ = [
     "ContractFactExtractor",

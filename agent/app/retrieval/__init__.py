@@ -1,6 +1,6 @@
-from agent.app.retrieval.embeddings import HashEmbeddingService
-from agent.app.retrieval.hybrid import HybridRetriever
-from agent.app.retrieval.ranking import reciprocal_rank_fusion, rerank_candidates
+from app.retrieval.embeddings import HashEmbeddingService
+from app.retrieval.hybrid import HybridRetriever
+from app.retrieval.ranking import reciprocal_rank_fusion, rerank_candidates
 
 __all__ = [
     "HashEmbeddingService",

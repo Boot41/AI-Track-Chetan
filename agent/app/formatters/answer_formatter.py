@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agent.app.schemas.orchestration import OrchestrationResult, QueryType
+from app.schemas.orchestration import OrchestrationResult, QueryType
 
 
 def _join_refs(references: list[str]) -> str:

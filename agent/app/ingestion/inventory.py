@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import cast
 from uuid import NAMESPACE_URL, uuid5
 
-from agent.app.schemas.ingestion import (
+from app.schemas.ingestion import (
     IngestionInventory,
     IngestionInventoryItem,
     RawDocumentRegistration,

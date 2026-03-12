@@ -3,9 +3,9 @@ from __future__ import annotations
 from sqlalchemy import Select, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from agent.app.persistence.tables import document_facts, document_risks, document_sections, documents
-from agent.app.schemas.ingestion import DocumentType
-from agent.app.schemas.orchestration import ClauseExtractionRequest, ClauseExtractionResult, ClauseMatch
+from app.persistence.tables import document_facts, document_risks, document_sections, documents
+from app.schemas.ingestion import DocumentType
+from app.schemas.orchestration import ClauseExtractionRequest, ClauseExtractionResult, ClauseMatch
 
 
 class ClauseExtractionTool:

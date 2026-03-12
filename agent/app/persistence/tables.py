@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import JSON, Boolean, Column, Float, ForeignKey, Integer, MetaData, String, Table, Text
 
-from agent.app.persistence.vector_type import Vector
+from app.persistence.vector_type import Vector
 
 metadata = MetaData()
 

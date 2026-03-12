@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent.app.schemas.orchestration import OrchestrationResult
+from app.schemas.orchestration import OrchestrationResult
 
 
 def _rank_recommendation(recommendation: str | None) -> int:

@@ -9,9 +9,9 @@ from typing import Any, cast
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from agent.app.ingestion.inventory import RAW_DATA_ROOT
-from agent.app.persistence.tables import documents
-from agent.app.schemas.ingestion import IngestionStatus
+from app.ingestion.inventory import RAW_DATA_ROOT
+from app.persistence.tables import documents
+from app.schemas.ingestion import IngestionStatus
 
 
 @dataclass(slots=True)

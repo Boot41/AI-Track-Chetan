@@ -1,4 +1,4 @@
-from agent.app.operations.workflows import (
+from app.operations.workflows import (
     CorpusIndexState,
     CompetitorCatalogState,
     OperationalDataWorkflow,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agent.app.schemas.evaluation import (
+from app.schemas.evaluation import (
     CatalogFitScore,
     NarrativeScoreInputs,
     RecommendationConfig,

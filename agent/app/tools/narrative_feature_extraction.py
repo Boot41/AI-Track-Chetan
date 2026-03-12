@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from agent.app.schemas.orchestration import (
+from app.schemas.orchestration import (
     NarrativeFeature,
     NarrativeFeatureExtractionRequest,
     NarrativeFeatureExtractionResult,

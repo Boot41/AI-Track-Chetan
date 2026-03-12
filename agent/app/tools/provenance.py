@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from agent.app.schemas.orchestration import (
+from app.schemas.orchestration import (
     EvidencePackagingRequest,
     EvidencePackagingResult,
     EvidenceReference,
 )
-from agent.app.schemas.ingestion import RetrievalMethod
+from app.schemas.ingestion import RetrievalMethod
 
 
 class EvidencePackagingTool:

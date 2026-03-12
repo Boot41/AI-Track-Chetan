@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from agent.app.schemas.evaluation import CatalogFitInputs, CatalogFitScore
+from app.schemas.evaluation import CatalogFitInputs, CatalogFitScore
 
 
 class CatalogFitScorer:

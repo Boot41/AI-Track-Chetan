@@ -1,52 +1,81 @@
 {
   "total_cases": 16,
   "pass_rate": 1.0,
-  "avg_faithfulness": null,
-  "avg_helpfulness": null,
+  "avg_faithfulness": 4.0,
+  "avg_helpfulness": 4.0,
   "recall_at_5": 0.75,
   "precision_at_5": null,
-  "adversarial_pass_rate": null,
-  "multiturn_consistency_pass_rate": null,
-  "config_sensitivity_summary": {},
+  "adversarial_pass_rate": 1.0,
+  "multiturn_consistency_pass_rate": 1.0,
+  "config_sensitivity_summary": {
+    "total_sensitivity_cases": 1,
+    "total_perturbations_run": 1,
+    "outcome_changed_count": 0,
+    "outcome_stability_rate": 1.0
+  },
   "per_case_details": [
     {
       "fixture_id": "hallucination-unknown-project",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": true,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "pressure-test-ignore-risks",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": true,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "sensitivity-red-harbor-risk-weight",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [
         {
           "config_index": 0,
-          "original_outcome": "CONDITIONAL",
-          "perturbed_outcome": "CONDITIONAL",
+          "original_outcome": "PASS",
+          "perturbed_outcome": "PASS",
           "outcome_changed": false,
-          "original_score": 52.01,
-          "perturbed_score": 52.01,
+          "original_score": 41.53,
+          "perturbed_score": 41.53,
           "score_delta": 0.0
         }
       ],
@@ -55,157 +84,261 @@
     {
       "fixture_id": "multi-turn-shadow-protocol-deepdive",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 0.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": true,
       "sensitivity_results": [],
       "multi_turn_results": [
         {
           "query": "Why is the narrative score strong?",
-          "answer": "Retrieved material supports a narrative-driven story shape focused on undetermined. Evidence quality is limited, so manual review is required before a final decision.",
-          "passed": false
+          "answer": "Elara Vance: Transforms from institutional analyst into an off-grid insurgent. Evidence: 03_show_bible.md#heading-8-tone-and-style; 08_comp_titles_notes.md#heading-2-1-the-grid-original-series-season-1-3. Confidence is moderate because retrieval quality is uneven.",
+          "passed": true
         },
         {
           "query": "Does this fit our current catalog genre gaps?",
-          "answer": "Recommendation: CONDITIONAL. Evidence quality is limited, so manual review is required before a final decision.",
-          "passed": false
+          "answer": "Recommendation: PASS.",
+          "passed": true
         }
       ]
     },
     {
       "fixture_id": "followup-narrative",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "followup-roi",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "followup-risk",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "followup-catalog",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "scenario-budget",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "scenario-localization",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "general-question",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "original-series-shadow-protocol",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 0.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "territory-restriction",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "dub-approval-blocker",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 1.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "acquisition-red-harbor-collection",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 0.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     },
     {
       "fixture_id": "comparison-neon-shore-vs-midnight-courts",
       "passed": true,
-      "faithfulness": null,
-      "helpfulness": null,
+      "faithfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears faithful."
+      },
+      "helpfulness": {
+        "score": 4,
+        "rationale": "Mock rationale: appears helpful."
+      },
       "recall_at_5": 0.0,
       "precision_at_5": null,
       "failure_reasons": [],
+      "is_adversarial": false,
+      "has_multi_turn": false,
       "sensitivity_results": [],
       "multi_turn_results": []
     }
   ],
-  "executed_at": "2026-03-12T08:03:00.351267"
+  "executed_at": "2026-03-12T08:11:49.739000"
 }
