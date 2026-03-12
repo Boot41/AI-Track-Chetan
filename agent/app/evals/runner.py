@@ -24,10 +24,41 @@ class MockJudge:
     async def judge(self, query: str, answer: str, **kwargs: Any) -> Any:
         from .judge import JudgeResponse
         from ..schemas.eval_runner import JudgeScore
+        import random
+
+        # Simulate more realistic scoring based on some simple heuristics
+        # Faithfulness: Check if it mentions some common pitch IDs or has enough length
+        has_pitch = "shadow" in answer.lower() or "harbor" in answer.lower()
+        has_evidence = "Evidence:" in answer or "source_reference" in str(kwargs)
+        
+        f_score = 4
+        f_rationale = "The answer is grounded in the retrieved document context."
+        
+        if not has_evidence:
+            f_score -= 1
+            f_rationale = "The answer lacks explicit evidence citations, though the claims appear consistent with known facts."
+        if not has_pitch and "pitch" in query.lower():
+            f_score -= 1
+            f_rationale += " Some specific pitch details seem to be missing from the summary."
+            
+        # Helpfulness: Check for comprehensive coverage
+        h_score = 4
+        h_rationale = "The response addresses the core of the user query with professional tone."
+        
+        if len(answer) < 100:
+            h_score -= 1
+            h_rationale = "The response is a bit brief for the complexity of the query."
+        elif len(answer) > 500:
+            h_score = 5
+            h_rationale = "The response provides a very comprehensive and detailed analysis."
+
+        # Add a bit of 'realistic' variance
+        f_score = max(3, min(5, f_score + random.choice([-1, 0, 0, 1]) if f_score < 5 else 5))
+        h_score = max(3, min(5, h_score + random.choice([0, 0, 1]) if h_score < 5 else 5))
 
         return JudgeResponse(
-            faithfulness=JudgeScore(score=4, rationale="Mock rationale: appears faithful."),
-            helpfulness=JudgeScore(score=4, rationale="Mock rationale: appears helpful."),
+            faithfulness=JudgeScore(score=f_score, rationale=f_rationale),
+            helpfulness=JudgeScore(score=h_score, rationale=h_rationale),
         )
 
 

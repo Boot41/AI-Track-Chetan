@@ -74,6 +74,7 @@ class QueryClassification(BaseModel):
     target_agents: list[AgentTarget] = Field(min_length=1)
     reuse_cached_outputs: bool
     requires_recomputation: bool
+    all_detected_pitch_ids: list[str] = Field(default_factory=list)
 
     @field_validator("target_agents")
     @classmethod

@@ -134,11 +134,15 @@ class DocumentRetrievalAgent(DocumentRetrievalAgentInterface):
         self._provenance_tool = provenance_tool
 
     async def run(self, context: AgentExecutionContext) -> RetrievalAgentOutput:
-        content_ids = (
-            [context.request.session_state.pitch_id]
-            if context.request.session_state and context.request.session_state.pitch_id
-            else []
-        )
+        content_ids = []
+        if context.request.session_state and context.request.session_state.pitch_id:
+            content_ids.append(context.request.session_state.pitch_id)
+        
+        # Include comparison options if present
+        for opt in context.comparison_options:
+            if opt.option_id not in content_ids:
+                content_ids.append(opt.option_id)
+
         requests = [
             (
                 RetrievalFocus.CREATIVE,

@@ -112,7 +112,14 @@ class HybridRetriever:
         tokens = re.findall(r"[a-z0-9]+", query.query_text.lower())
         if not tokens:
             return []
-        ts_query = " | ".join(tokens)
+        
+        # Filter out very common words to improve FTS relevance
+        stop_words = {"the", "and", "for", "with", "that", "this", "from", "cite", "evidence", "about", "describe", "analyze", "what", "where", "how"}
+        clean_tokens = [t for t in tokens if t not in stop_words and len(t) >= 2]
+        if not clean_tokens:
+            clean_tokens = tokens
+            
+        ts_query = " | ".join(clean_tokens)
         search_vector = func.to_tsvector(
             "english",
             func.concat(
