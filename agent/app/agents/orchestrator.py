@@ -6,31 +6,31 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.agents.interfaces import (
+from .interfaces import (
     CatalogFitAgentInterface,
     DocumentRetrievalAgentInterface,
     NarrativeAnalysisAgentInterface,
     RiskContractAnalysisAgentInterface,
     RoiPredictionAgentInterface,
 )
-from app.agents.query_classifier import QueryClassifier
-from app.agents.routing import ROUTING_MATRIX
-from app.agents.subagents import (
+from .query_classifier import QueryClassifier
+from .routing import ROUTING_MATRIX
+from .subagents import (
     CatalogFitAgent,
     DocumentRetrievalAgent,
     NarrativeAnalysisAgent,
     RiskContractAnalysisAgent,
     RoiPredictionAgent,
 )
-from app.operations import OperationalDataWorkflow
-from app.scorers import (
+from .operations import OperationalDataWorkflow
+from .scorers import (
     CatalogFitScorer,
     CompletionRateScorer,
     RecommendationEngine,
     RiskSeverityScorer,
     RoiScorer,
 )
-from app.schemas.orchestration import (
+from .schemas.orchestration import (
     AgentExecutionContext,
     AgentInvocation,
     AgentRequest,
@@ -51,7 +51,7 @@ from app.schemas.orchestration import (
     ToolInvocation,
     ToolName,
 )
-from app.tools import (
+from .tools import (
     ClauseExtractionTool,
     EvidencePackagingTool,
     HybridDocumentRetrievalTool,
