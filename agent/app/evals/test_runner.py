@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
-from agent.app.agents.orchestrator import AgentOrchestrator
-from agent.app.evals.judge import JudgeResponse, SemanticJudge
-from agent.app.evals.runner import EvalRunner
-from agent.app.schemas.eval_runner import EvalCase, JudgeScore
-from agent.app.schemas.orchestration import (
+from app.agents.orchestrator import AgentOrchestrator
+from app.evals.judge import JudgeResponse, SemanticJudge
+from app.evals.runner import EvalRunner
+from app.schemas.eval_runner import EvalCase, JudgeScore
+from app.schemas.orchestration import (
     AgentTarget,
     OrchestrationResult,
     QueryClassification,

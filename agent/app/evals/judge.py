@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Protocol
+from typing import Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
-from agent.app.schemas.eval_runner import JudgeScore
+from app.schemas.eval_runner import JudgeScore
 
 
 class JudgeResponse(BaseModel):
@@ -31,9 +31,7 @@ class SemanticJudge:
         expected_risks: list[str] | None = None,
         expected_facts: list[str] | None = None,
     ) -> JudgeResponse:
-        prompt = self._build_prompt(
-            query, answer, golden_answer, expected_risks, expected_facts
-        )
+        prompt = self._build_prompt(query, answer, golden_answer, expected_risks, expected_facts)
         response_text = await self.llm_client.generate(prompt)
         return self._parse_response(response_text)
 
@@ -45,12 +43,14 @@ class SemanticJudge:
         expected_risks: list[str] | None = None,
         expected_facts: list[str] | None = None,
     ) -> str:
-        prompt = f"""You are an expert judge evaluating an AI agent's response for an OTT decision support system.
+        prompt = """You are an expert judge evaluating an AI agent's response
+for an OTT decision support system.
 Evaluate the response based on faithfulness and helpfulness.
 
 Query: {query}
 Agent Answer: {answer}
 """
+        prompt = prompt.format(query=query, answer=answer)
         if golden_answer:
             prompt += f"\nGolden Answer: {golden_answer}"
         if expected_risks:

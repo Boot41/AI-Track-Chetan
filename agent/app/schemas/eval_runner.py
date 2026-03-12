@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from agent.app.schemas.evaluation import RecommendationConfig
+from app.schemas.evaluation import RecommendationConfig
 
 
 class EvalBehavior(StrEnum):
@@ -64,7 +64,11 @@ class CaseEvalResult(BaseModel):
     precision_at_5: float | None = None
     failure_reasons: list[str] = Field(default_factory=list)
     
-    # For sensitivity/multi-turn
+    # For summary aggregation
+    is_adversarial: bool = False
+    has_multi_turn: bool = False
+    
+    # For sensitivity/multi-turn details
     sensitivity_results: list[dict[str, Any]] = Field(default_factory=list)
     multi_turn_results: list[dict[str, Any]] = Field(default_factory=list)
 

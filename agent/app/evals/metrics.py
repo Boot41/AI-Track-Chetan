@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent.app.schemas.eval_runner import RequiredEvidence
+from app.schemas.eval_runner import RequiredEvidence
 
 
 def calculate_recall_at_k(
@@ -20,7 +20,10 @@ def calculate_recall_at_k(
         found = False
         for retrieved in retrieved_top_k:
             # Check for source_reference match
-            if required.source_reference and retrieved.get("source_reference") == required.source_reference:
+            if (
+                required.source_reference
+                and retrieved.get("source_reference") == required.source_reference
+            ):
                 found = True
                 break
             # Check for section_id match if source_reference not provided or if we want either
@@ -44,7 +47,7 @@ def calculate_precision_at_k(
     """
     if relevant_labels is None:
         return None
-    
+
     if not retrieved_evidence:
         return 0.0
 
@@ -54,5 +57,5 @@ def calculate_precision_at_k(
     for retrieved in retrieved_top_k:
         if retrieved.get("section_id") in relevant_labels:
             relevant_count += 1
-            
+
     return relevant_count / len(retrieved_top_k)
