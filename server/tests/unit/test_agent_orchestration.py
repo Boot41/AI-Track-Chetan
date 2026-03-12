@@ -6,10 +6,20 @@ from pathlib import Path
 
 import pytest
 from agent.app.agent import (
+    catalog_fit_agent,
     classify_query_for_delegation,
+    clause_extraction,
+    document_retrieval_agent,
+    evidence_packaging,
     final_response_agent,
+    hybrid_document_retrieval,
+    narrative_analysis_agent,
+    narrative_feature_extraction,
     orchestrate_query,
+    risk_contract_analysis_agent,
+    roi_prediction_agent,
     root_agent,
+    sql_retrieval,
 )
 from agent.app.agents.orchestrator import AgentOrchestrator
 from agent.app.agents.query_classifier import QueryClassifier
@@ -260,7 +270,35 @@ def test_adk_final_response_agent_exposes_orchestrator_tool() -> None:
     assert final_response_agent.disallow_transfer_to_peers is True
     assert root_agent.tools
     assert classify_query_for_delegation in root_agent.tools
-    assert orchestrate_query in root_agent.tools
+    assert orchestrate_query not in root_agent.tools
+
+
+def test_adk_subagent_tool_mapping_is_explicit_and_non_minimal() -> None:
+    assert set(document_retrieval_agent.tools) == {
+        hybrid_document_retrieval,
+        evidence_packaging,
+    }
+    assert set(narrative_analysis_agent.tools) == {
+        hybrid_document_retrieval,
+        narrative_feature_extraction,
+        evidence_packaging,
+    }
+    assert set(roi_prediction_agent.tools) == {
+        sql_retrieval,
+        hybrid_document_retrieval,
+        evidence_packaging,
+    }
+    assert set(risk_contract_analysis_agent.tools) == {
+        clause_extraction,
+        hybrid_document_retrieval,
+        evidence_packaging,
+    }
+    assert set(catalog_fit_agent.tools) == {
+        hybrid_document_retrieval,
+        sql_retrieval,
+        evidence_packaging,
+    }
+    assert set(final_response_agent.tools) == {orchestrate_query}
 
 
 def test_adk_root_agent_exposes_specialist_subagents() -> None:
@@ -272,6 +310,7 @@ def test_adk_root_agent_exposes_specialist_subagents() -> None:
         "roi_prediction_agent",
         "risk_contract_analysis_agent",
         "catalog_fit_agent",
+        "final_response_agent",
     }
     for agent in root_agent.sub_agents:
         if agent.name != "final_response_agent":

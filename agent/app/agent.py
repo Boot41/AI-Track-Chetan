@@ -323,10 +323,12 @@ narrative_analysis_agent = Agent(
     description="Extracts narrative features from creative materials.",
     instruction=(
         "Worker-only agent. Do not provide user-facing answers. "
-        "Use `narrative_feature_extraction`, then transfer control back to "
-        "`streamlogic_orchestrator`."
+        "Use `hybrid_document_retrieval` to collect relevant scenes/sections, then "
+        "`narrative_feature_extraction` for narrative signals, and "
+        "`evidence_packaging` for traceable citations (use used_by_agent='narrative_analysis'). "
+        "Then transfer control back to `streamlogic_orchestrator`."
     ),
-    tools=[narrative_feature_extraction],
+    tools=[hybrid_document_retrieval, narrative_feature_extraction, evidence_packaging],
     disallow_transfer_to_peers=True,
 )
 
@@ -337,9 +339,12 @@ roi_prediction_agent = Agent(
     description="Retrieves structured metrics for completion, retention, and ROI.",
     instruction=(
         "Worker-only agent. Do not provide user-facing answers. "
-        "Use `sql_retrieval`, then transfer control back to `streamlogic_orchestrator`."
+        "Use `sql_retrieval` for structured business metrics, optionally "
+        "`hybrid_document_retrieval` for contextual/comparable evidence, and "
+        "`evidence_packaging` for traceable citations (use used_by_agent='roi_prediction'). "
+        "Then transfer control back to `streamlogic_orchestrator`."
     ),
-    tools=[sql_retrieval],
+    tools=[sql_retrieval, hybrid_document_retrieval, evidence_packaging],
     disallow_transfer_to_peers=True,
 )
 
@@ -350,9 +355,12 @@ risk_contract_analysis_agent = Agent(
     description="Extracts and analyzes contract clauses and rights risk.",
     instruction=(
         "Worker-only agent. Do not provide user-facing answers. "
-        "Use `clause_extraction`, then transfer control back to `streamlogic_orchestrator`."
+        "Use `clause_extraction` for contractual risk clauses, optionally "
+        "`hybrid_document_retrieval` for supporting document context, and "
+        "`evidence_packaging` for traceable citations (use used_by_agent='risk_contract_analysis'). "
+        "Then transfer control back to `streamlogic_orchestrator`."
     ),
-    tools=[clause_extraction],
+    tools=[clause_extraction, hybrid_document_retrieval, evidence_packaging],
     disallow_transfer_to_peers=True,
 )
 
@@ -363,10 +371,12 @@ catalog_fit_agent = Agent(
     description="Retrieves strategic and comparable evidence for catalog fit signals.",
     instruction=(
         "Worker-only agent. Do not provide user-facing answers. "
-        "Use `hybrid_document_retrieval` and optionally `evidence_packaging`, then transfer "
-        "control back to `streamlogic_orchestrator`."
+        "Use `hybrid_document_retrieval` for catalog/market narrative evidence, "
+        "`sql_retrieval` for comparable platform metrics when relevant, and "
+        "`evidence_packaging` for traceable citations (use used_by_agent='catalog_fit'). "
+        "Then transfer control back to `streamlogic_orchestrator`."
     ),
-    tools=[hybrid_document_retrieval, evidence_packaging],
+    tools=[hybrid_document_retrieval, sql_retrieval, evidence_packaging],
     disallow_transfer_to_peers=True,
 )
 
@@ -392,19 +402,20 @@ root_agent = Agent(
         "evidence-backed decision support for OTT content investments.\n\n"
         "1. Always call `classify_query_for_delegation` first to understand the request and get subagent recommendations.\n"
         "2. Transfer to the recommended subagents to gather specific analysis (Narrative, ROI, Risk, etc.).\n"
-        "3. Finally, call `orchestrate_query`. This tool provides the official structured scorecard, "
-        "evidence items, and deterministic metrics required for the platform's stability.\n"
+        "3. Transfer to `final_response_agent` to call `orchestrate_query` and generate the official "
+        "structured scorecard, evidence items, and deterministic metrics required for platform stability.\n"
         "4. Use the information from the subagents and the `orchestrate_query` output to synthesize a "
         "thoughtful, professional, and nuanced final response to the user. Do not just repeat the tool's "
         "summary; provide your own analyst-level perspective on the subtext, nuances, and risks."
     ),
-    tools=[classify_query_for_delegation, orchestrate_query],
+    tools=[classify_query_for_delegation],
     sub_agents=[
         document_retrieval_agent,
         narrative_analysis_agent,
         roi_prediction_agent,
         risk_contract_analysis_agent,
         catalog_fit_agent,
+        final_response_agent,
     ],
 )
 
