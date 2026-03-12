@@ -6,8 +6,8 @@ import json
 from sqlalchemy import delete, insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.persistence.tables import document_facts, document_risks, document_sections, documents
-from app.schemas.ingestion import DocumentMetadata, SectionRecord
+from .tables import document_facts, document_risks, document_sections, documents
+from ..schemas.ingestion import DocumentMetadata, SectionRecord
 
 
 class DocumentRepository:

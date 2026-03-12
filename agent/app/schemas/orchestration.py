@@ -5,7 +5,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.schemas.evaluation import (
+from .evaluation import (
     CatalogFitInputs,
     CatalogFitScore,
     CharacterArcSignal,
@@ -25,8 +25,8 @@ from app.schemas.evaluation import (
     RoiScore,
     RetentionLiftInputs,
 )
-from app.schemas.ingestion import DocumentType, RetrievalMethod
-from app.schemas.retrieval import RetrievalCandidate
+from .ingestion import DocumentType, RetrievalMethod
+from .retrieval import RetrievalCandidate
 
 
 class QueryType(StrEnum):

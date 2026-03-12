@@ -16,5 +16,16 @@
     {
       "source_reference": "Red Harbor Licensing Agreement"
     }
-  ]
+  ],
+  "expected_classification": {
+    "query_type": "acquisition_eval",
+    "target_agents": [
+      "risk_contract_analysis",
+      "catalog_fit",
+      "roi_prediction",
+      "recommendation_engine"
+    ],
+    "reuse_cached_outputs": false,
+    "requires_recomputation": true
+  }
 }

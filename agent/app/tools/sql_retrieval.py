@@ -3,8 +3,8 @@ from __future__ import annotations
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.persistence.tables import structured_metrics
-from app.schemas.orchestration import SqlMetricRecord, SqlRetrievalRequest, SqlRetrievalResult
+from ..persistence.tables import structured_metrics
+from ..schemas.orchestration import SqlMetricRecord, SqlRetrievalRequest, SqlRetrievalResult
 
 _DEFAULT_METRICS = {
     "baseline_completion_rate": 0.56,
@@ -30,7 +30,7 @@ class SqlRetrievalTool:
         
         # Normalize pitch_id if it's not a standard ID
         if pitch_id and not pitch_id.startswith("pitch_"):
-            from app.agent import _infer_pitch_id_from_message
+            from ..agent import _infer_pitch_id_from_message
             normalized = _infer_pitch_id_from_message(pitch_id)
             if normalized:
                 pitch_id = normalized

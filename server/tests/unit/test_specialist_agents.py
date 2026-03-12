@@ -24,6 +24,23 @@ from agent.app.schemas.retrieval import RetrievalCandidate
 from agent.app.tools.narrative_feature_extraction import NarrativeFeatureExtractionTool
 from agent.app.tools.provenance import EvidencePackagingTool
 from agent.app.tools.sql_retrieval import SqlRetrievalTool
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+
+@pytest.fixture
+def dummy_session_factory() -> async_sessionmaker[AsyncSession]:
+    from unittest.mock import AsyncMock, MagicMock
+
+    factory = MagicMock(spec=async_sessionmaker)
+    session = AsyncMock(spec=AsyncSession)
+    session.execute.return_value = MagicMock()
+    session.execute.return_value.fetchall.return_value = []
+
+    # Mock the async context manager
+    cm = MagicMock()
+    cm.__aenter__.return_value = session
+    factory.return_value = cm
+    return factory
 
 
 class StubHybridTool:
@@ -137,7 +154,9 @@ async def test_narrative_agent_returns_typed_story_outputs() -> None:
 
 
 @pytest.mark.asyncio
-async def test_roi_agent_returns_scoring_inputs_and_comparable_evidence() -> None:
+async def test_roi_agent_returns_scoring_inputs_and_comparable_evidence(
+    dummy_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
     retrieval = await DocumentRetrievalAgent(
         StubHybridTool(),  # type: ignore[arg-type]
         EvidencePackagingTool(),
@@ -146,7 +165,9 @@ async def test_roi_agent_returns_scoring_inputs_and_comparable_evidence() -> Non
         feature_tool=NarrativeFeatureExtractionTool(),
         provenance_tool=EvidencePackagingTool(),
     ).run(_context(), retrieval)
-    result = await RoiPredictionAgent(SqlRetrievalTool(), EvidencePackagingTool()).run(
+    result = await RoiPredictionAgent(
+        SqlRetrievalTool(dummy_session_factory), EvidencePackagingTool()
+    ).run(
         _context(),
         retrieval,
         narrative,

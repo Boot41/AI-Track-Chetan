@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.retrieval.hybrid import HybridRetriever
-from app.schemas.orchestration import (
+from ..retrieval.hybrid import HybridRetriever
+from ..schemas.orchestration import (
     HybridDocumentRetrievalRequest,
     HybridDocumentRetrievalResult,
 )
-from app.schemas.retrieval import RetrievalQuery
+from ..schemas.retrieval import RetrievalQuery
 
 
 class HybridDocumentRetrievalTool:

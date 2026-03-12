@@ -3,8 +3,8 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Iterable
 
-from app.schemas.ingestion import RetrievalMethod
-from app.schemas.orchestration import EvidenceReference, OrchestrationResult
+from ..schemas.ingestion import RetrievalMethod
+from ..schemas.orchestration import EvidenceReference, OrchestrationResult
 
 
 def _fingerprint(reference: EvidenceReference) -> str:

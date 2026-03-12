@@ -3,7 +3,7 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from app.evals.judge import LLMClient, SemanticJudge
+from .judge import LLMClient, SemanticJudge
 
 
 @pytest.fixture

@@ -1,4 +1,4 @@
-from app.schemas.evaluation import (
+from .evaluation import (
     CatalogFitScore,
     CompletionRateScore,
     RecommendationConfig,
@@ -8,7 +8,7 @@ from app.schemas.evaluation import (
     RiskSeverity,
     RoiScore,
 )
-from app.schemas.ingestion import (
+from .ingestion import (
     DocumentClassification,
     DocumentMetadata,
     DocumentType,
@@ -21,7 +21,7 @@ from app.schemas.ingestion import (
     SectionRecord,
     SectioningHint,
 )
-from app.schemas.orchestration import (
+from .orchestration import (
     AgentRequest,
     AgentTarget,
     CatalogAgentOutput,
@@ -40,7 +40,7 @@ from app.schemas.orchestration import (
     SessionState,
     TrustedRequestContext,
 )
-from app.schemas.retrieval import RetrievalCandidate, RetrievalQuery
+from .retrieval import RetrievalCandidate, RetrievalQuery
 
 __all__ = [
     "AgentRequest",

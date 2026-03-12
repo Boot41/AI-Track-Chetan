@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.schemas.ingestion import (
+from ..schemas.ingestion import (
     DocumentClassification,
     DocumentType,
     RawDocumentRegistration,

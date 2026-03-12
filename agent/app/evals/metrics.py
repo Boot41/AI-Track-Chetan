@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.schemas.eval_runner import RequiredEvidence
+from ..schemas.eval_runner import RequiredEvidence
 
 
 def calculate_recall_at_k(

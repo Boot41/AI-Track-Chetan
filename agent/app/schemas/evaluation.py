@@ -4,7 +4,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.schemas.ingestion import RetrievalMethod
+from .ingestion import RetrievalMethod
 
 
 class RiskSeverity(StrEnum):

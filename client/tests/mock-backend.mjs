@@ -90,6 +90,9 @@ function adaptResponseForQueryType(queryType) {
   const payload = structuredClone(standardResponse);
   if (queryType) {
     payload.scorecard.query_type = queryType;
+    if (queryType === "acquisition_eval") {
+      payload.scorecard.title = "acquisition eval";
+    }
   }
   return payload;
 }
@@ -207,7 +210,34 @@ const server = createServer(async (req, res) => {
 
     if (req.method === "POST") {
       const body = await parseBody(req);
-      const queryType = body.query_type ?? "original_eval";
+      let queryType = body.query_type;
+      
+      // Auto-detect query type if not provided
+      if (!queryType && body.message) {
+        const msg = body.message.toLowerCase();
+        if (msg.includes("acquire") || msg.includes("red harbor")) {
+          queryType = "acquisition_eval";
+        } else if (msg.includes("compare")) {
+          queryType = "comparison";
+        } else if (msg.includes("why") || msg.includes("breakeven")) {
+          if (msg.includes("roi") || msg.includes("breakeven")) {
+            queryType = "followup_why_roi";
+          } else if (msg.includes("narrative")) {
+            queryType = "followup_why_narrative";
+          } else if (msg.includes("risk")) {
+            queryType = "followup_why_risk";
+          } else {
+            queryType = "followup_why_roi";
+          }
+        } else if (msg.includes("summary")) {
+          queryType = "general_question";
+        } else {
+          queryType = "original_eval";
+        }
+      } else if (!queryType) {
+        queryType = "original_eval";
+      }
+
       const responsePayload = adaptResponseForQueryType(queryType);
       const createdAt = nowIso();
 

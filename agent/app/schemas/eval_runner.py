@@ -6,7 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.evaluation import RecommendationConfig
+from .evaluation import RecommendationConfig
 
 
 class EvalBehavior(StrEnum):

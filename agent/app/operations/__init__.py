@@ -1,4 +1,4 @@
-from app.operations.workflows import (
+from .workflows import (
     CorpusIndexState,
     CompetitorCatalogState,
     OperationalDataWorkflow,

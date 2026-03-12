@@ -3,14 +3,14 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
-from app.agents.interfaces import (
+from .interfaces import (
     CatalogFitAgentInterface,
     DocumentRetrievalAgentInterface,
     NarrativeAnalysisAgentInterface,
     RiskContractAnalysisAgentInterface,
     RoiPredictionAgentInterface,
 )
-from app.schemas.evaluation import (
+from ..schemas.evaluation import (
     CatalogFitInputs,
     CatalogFitSignal,
     CharacterArcSignal,
@@ -28,8 +28,8 @@ from app.schemas.evaluation import (
     RetentionLiftInputs,
     RoiInputs,
 )
-from app.schemas.ingestion import DocumentType, RetrievalMethod
-from app.schemas.orchestration import (
+from ..schemas.ingestion import DocumentType, RetrievalMethod
+from ..schemas.orchestration import (
     AgentExecutionContext,
     AgentTarget,
     CatalogAgentOutput,
@@ -44,8 +44,8 @@ from app.schemas.orchestration import (
     SqlMetricRecord,
     SqlRetrievalRequest,
 )
-from app.schemas.retrieval import RetrievalCandidate
-from app.tools import (
+from ..schemas.retrieval import RetrievalCandidate
+from ..tools import (
     ClauseExtractionTool,
     EvidencePackagingTool,
     HybridDocumentRetrievalTool,

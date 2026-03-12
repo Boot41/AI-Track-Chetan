@@ -247,9 +247,6 @@ describe("App frontend integration flow", () => {
     fireEvent.change(screen.getByTestId("chat-input"), {
       target: { value: "Why is ROI near breakeven?" },
     });
-    fireEvent.change(screen.getByTestId("query-type"), {
-      target: { value: "followup_why_roi" },
-    });
     fireEvent.click(screen.getByTestId("chat-submit"));
 
     expect(await screen.findByTestId("assistant-answer")).toHaveTextContent("breakeven");
@@ -321,9 +318,6 @@ describe("App frontend integration flow", () => {
     });
 
     renderApp("/app");
-    fireEvent.change(screen.getByTestId("query-type"), {
-      target: { value: "comparison" },
-    });
     fireEvent.change(screen.getByTestId("chat-input"), {
       target: { value: "Compare Neon Shore and Midnight Courts" },
     });

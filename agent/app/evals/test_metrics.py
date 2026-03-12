@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from app.evals.metrics import calculate_precision_at_k, calculate_recall_at_k
-from app.schemas.eval_runner import RequiredEvidence
+from .metrics import calculate_precision_at_k, calculate_recall_at_k
+from ..schemas.eval_runner import RequiredEvidence
 
 
 def test_recall_at_k_computes_correctly():

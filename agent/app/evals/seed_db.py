@@ -10,7 +10,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "server"))
 
-from app.ingestion.service import DocumentIngestionService  # noqa: E402
+from ..ingestion.service import DocumentIngestionService  # noqa: E402
 from server.app.db.seed_structured_metrics import (  # noqa: E402
     seed_platform_titles_and_viewership,
     seed_structured_metrics,

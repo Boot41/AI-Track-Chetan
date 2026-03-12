@@ -24,5 +24,17 @@
     {
       "source_reference": "Midnight Courts Licensing Summary"
     }
-  ]
+  ],
+  "expected_classification": {
+    "query_type": "comparison",
+    "target_agents": [
+      "narrative_analysis",
+      "roi_prediction",
+      "risk_contract_analysis",
+      "catalog_fit",
+      "comparison_synthesis"
+    ],
+    "reuse_cached_outputs": false,
+    "requires_recomputation": true
+  }
 }

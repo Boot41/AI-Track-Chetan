@@ -3,11 +3,11 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from app.agents.orchestrator import AgentOrchestrator
-from app.evals.judge import JudgeResponse, SemanticJudge
-from app.evals.runner import EvalRunner
-from app.schemas.eval_runner import EvalCase, JudgeScore
-from app.schemas.orchestration import (
+from ..agents.orchestrator import AgentOrchestrator
+from .judge import JudgeResponse, SemanticJudge
+from .runner import EvalRunner
+from ..schemas.eval_runner import EvalCase, JudgeScore
+from ..schemas.orchestration import (
     AgentTarget,
     OrchestrationResult,
     QueryClassification,

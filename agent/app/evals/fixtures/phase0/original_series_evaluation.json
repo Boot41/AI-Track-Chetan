@@ -16,5 +16,17 @@
     {
       "source_reference": "Shadow Protocol Pitch Deck"
     }
-  ]
+  ],
+  "expected_classification": {
+    "query_type": "original_eval",
+    "target_agents": [
+      "narrative_analysis",
+      "roi_prediction",
+      "risk_contract_analysis",
+      "catalog_fit",
+      "recommendation_engine"
+    ],
+    "reuse_cached_outputs": false,
+    "requires_recomputation": true
+  }
 }

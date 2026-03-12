@@ -105,10 +105,11 @@ class OrchestratorAgentServiceClient:
 
     async def evaluate(self, envelope: AgentRequestEnvelope) -> PublicResponseContract:
         import httpx
+
         from app.schemas.contracts import PublicResponseContract
 
         envelope = AgentRequestEnvelope.model_validate(envelope)
-        
+
         # Adapt internal envelope to Agent Service request
         payload = {
             "message": envelope.message,
@@ -117,15 +118,15 @@ class OrchestratorAgentServiceClient:
             "context": {
                 "chat_message_id": envelope.context.chat_message_id,
                 "evaluation_id": envelope.context.evaluation_id,
-                "session_state_payload": _to_orchestrator_session_state(envelope.session_state)
-            }
+                "session_state_payload": _to_orchestrator_session_state(envelope.session_state),
+            },
         }
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(f"{self.base_url}/evaluate", json=payload)
             if response.status_code != 200:
                 raise RuntimeError(f"Agent Service error: {response.text}")
-            
+
             return PublicResponseContract.model_validate(response.json())
 
 

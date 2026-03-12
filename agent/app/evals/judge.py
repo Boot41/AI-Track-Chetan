@@ -5,7 +5,7 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict
 
-from app.schemas.eval_runner import JudgeScore
+from ..schemas.eval_runner import JudgeScore
 
 
 class JudgeResponse(BaseModel):

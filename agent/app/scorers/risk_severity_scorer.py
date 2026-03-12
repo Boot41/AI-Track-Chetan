@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.schemas.evaluation import RiskFinding, RiskScore, RiskSeverity
+from ..schemas.evaluation import RiskFinding, RiskScore, RiskSeverity
 
 _RISK_ORDER = {
     RiskSeverity.LOW: 0,

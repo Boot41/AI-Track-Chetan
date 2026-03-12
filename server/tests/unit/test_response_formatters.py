@@ -182,8 +182,10 @@ def test_response_formatter_narrative_followup_surfaces_character_arc_evidence()
         evidence=[],
     )
     payload = format_public_response(result)
-    assert "Elara Vance" in payload["answer"]
-    assert "02_pilot_script.md#scene-3" in payload["answer"]
+    answer = payload["answer"]
+    assert isinstance(answer, str)
+    assert "Elara Vance" in answer
+    assert "02_pilot_script.md#scene-3" in answer
 
 
 def test_response_formatter_comparison_keeps_stable_envelope() -> None:

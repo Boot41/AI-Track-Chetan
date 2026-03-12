@@ -5,25 +5,25 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from app.agents.orchestrator import AgentOrchestrator
-from app.evals.judge import SemanticJudge
-from app.evals.metrics import calculate_precision_at_k, calculate_recall_at_k
-from app.formatters import format_public_response
-from app.schemas.eval_runner import (
+from ..agents.orchestrator import AgentOrchestrator
+from .judge import SemanticJudge
+from .metrics import calculate_precision_at_k, calculate_recall_at_k
+from ..formatters import format_public_response
+from ..schemas.eval_runner import (
     CaseEvalResult,
     EvalBehavior,
     EvalCase,
     EvalSuiteResult,
 )
-from app.schemas.orchestration import AgentRequest, SessionState, TrustedRequestContext
+from ..schemas.orchestration import AgentRequest, SessionState, TrustedRequestContext
 
 logger = logging.getLogger(__name__)
 
 
 class MockJudge:
     async def judge(self, query: str, answer: str, **kwargs: Any) -> Any:
-        from app.evals.judge import JudgeResponse
-        from app.schemas.eval_runner import JudgeScore
+        from .judge import JudgeResponse
+        from ..schemas.eval_runner import JudgeScore
 
         return JudgeResponse(
             faithfulness=JudgeScore(score=4, rationale="Mock rationale: appears faithful."),

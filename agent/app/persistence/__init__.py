@@ -1,3 +1,3 @@
-from app.persistence.repository import DocumentRepository
+from .repository import DocumentRepository
 
 __all__ = ["DocumentRepository"]

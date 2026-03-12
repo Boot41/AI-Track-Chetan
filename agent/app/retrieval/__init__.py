@@ -1,6 +1,6 @@
-from app.retrieval.embeddings import HashEmbeddingService
-from app.retrieval.hybrid import HybridRetriever
-from app.retrieval.ranking import reciprocal_rank_fusion, rerank_candidates
+from .embeddings import HashEmbeddingService
+from .hybrid import HybridRetriever
+from .ranking import reciprocal_rank_fusion, rerank_candidates
 
 __all__ = [
     "HashEmbeddingService",

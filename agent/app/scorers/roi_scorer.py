@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.schemas.evaluation import (
+from ..schemas.evaluation import (
     CompletionRateScore,
     CostPerViewInputs,
     RetentionLiftInputs,

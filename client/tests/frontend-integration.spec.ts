@@ -24,8 +24,6 @@ test("acquisition evaluation and warning display render from backend contract", 
   await page.goto("/login");
   await page.getByTestId("login-submit").click();
 
-  await page.getByRole("combobox").first().click();
-  await page.getByRole("option", { name: "Acquisition Evaluation" }).click();
   await page.getByTestId("chat-input").fill("Should we acquire Red Harbor?");
   await page.getByTestId("chat-submit").click();
 
@@ -42,8 +40,6 @@ test("follow-up and comparison flows render in same session context", async ({ p
   await page.getByTestId("chat-submit").click();
   await expect(page.getByTestId("assistant-answer").last()).toContainText("conditional greenlight");
 
-  await page.getByRole("combobox").first().click();
-  await page.getByRole("option", { name: "Follow-up: ROI" }).click();
   await page.getByTestId("chat-input").fill("Why is ROI near breakeven?");
   await page.getByTestId("chat-submit").click();
   await expect(page.getByTestId("assistant-answer").last()).toContainText("breakeven");
@@ -51,8 +47,6 @@ test("follow-up and comparison flows render in same session context", async ({ p
     "Follow-up answer is based on cached ROI outputs.",
   );
 
-  await page.getByRole("combobox").first().click();
-  await page.getByRole("option", { name: "Comparison" }).click();
   await page.getByTestId("chat-input").fill("Compare Neon Shore and Midnight Courts");
   await page.getByTestId("chat-submit").click();
   await expect(page.getByTestId("comparison-view")).toContainText("Midnight Courts");
@@ -63,8 +57,6 @@ test("review-required metadata is visible for low-confidence responses", async (
   await page.goto("/login");
   await page.getByTestId("login-submit").click();
 
-  await page.getByRole("combobox").first().click();
-  await page.getByRole("option", { name: "General Question" }).click();
   await page.getByTestId("chat-input").fill("Give me a summary");
   await page.getByTestId("chat-submit").click();
 

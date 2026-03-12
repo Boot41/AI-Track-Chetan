@@ -163,7 +163,9 @@ async def create_message_and_evaluation(
         role="user",
         message_text=body.message,
         query_type=body.query_type.value if body.query_type is not None else None,
-        classification=classification.model_dump(mode="json") if classification is not None else None,
+        classification=classification.model_dump(mode="json")
+        if classification is not None
+        else None,
     )
     db.add(user_message)
     session.updated_at = datetime.now(UTC).replace(tzinfo=None)

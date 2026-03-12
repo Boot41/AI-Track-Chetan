@@ -3,9 +3,14 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import cast
 
 import pytest
+from agent.app.agent import (
+    classify_query_for_delegation,
+    final_response_agent,
+    orchestrate_query,
+    root_agent,
+)
 from agent.app.agents.orchestrator import AgentOrchestrator
 from agent.app.agents.query_classifier import QueryClassifier
 from agent.app.agents.routing import ROUTING_MATRIX
@@ -33,12 +38,6 @@ from agent.app.schemas.retrieval import RetrievalCandidate
 from agent.app.tools.narrative_feature_extraction import NarrativeFeatureExtractionTool
 from agent.app.tools.provenance import EvidencePackagingTool
 from agent.app.tools.sql_retrieval import SqlRetrievalTool
-from app.agent import (
-    classify_query_for_delegation,
-    final_response_agent,
-    orchestrate_query,
-    root_agent,
-)
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 FIXTURE_PATH = (
@@ -54,7 +53,18 @@ FIXTURE_PATH = (
 
 @pytest.fixture
 def dummy_session_factory() -> async_sessionmaker[AsyncSession]:
-    return cast(async_sessionmaker[AsyncSession], object())
+    from unittest.mock import AsyncMock, MagicMock
+
+    factory = MagicMock(spec=async_sessionmaker)
+    session = AsyncMock(spec=AsyncSession)
+    session.execute.return_value = MagicMock()
+    session.execute.return_value.fetchall.return_value = []
+
+    # Mock the async context manager
+    cm = MagicMock()
+    cm.__aenter__.return_value = session
+    factory.return_value = cm
+    return factory
 
 
 def _cached_output(summary: str) -> SessionAgentOutput:
@@ -170,8 +180,10 @@ def test_session_state_reuse_decision_clears_narrative_recompute_when_cache_exis
 
 
 @pytest.mark.asyncio
-async def test_tool_interfaces_validate_typed_payloads() -> None:
-    sql_result = await SqlRetrievalTool().run(
+async def test_tool_interfaces_validate_typed_payloads(
+    dummy_session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    sql_result = await SqlRetrievalTool(dummy_session_factory).run(
         SqlRetrievalRequest(
             pitch_id="pitch_shadow_protocol",
             metric_keys=["baseline_completion_rate"],
@@ -263,7 +275,7 @@ def test_adk_root_agent_exposes_specialist_subagents() -> None:
     }
     for agent in root_agent.sub_agents:
         if agent.name != "final_response_agent":
-            assert agent.disallow_transfer_to_peers is True
+            assert getattr(agent, "disallow_transfer_to_peers", None) is True
 
 
 def test_delegation_classifier_returns_narrative_specialist_for_arc_prompt() -> None:

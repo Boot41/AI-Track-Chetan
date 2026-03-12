@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from app.formatters.comparison_formatter import format_comparison_scorecard
-from app.schemas.orchestration import OrchestrationResult, QueryType
+from .comparison_formatter import format_comparison_scorecard
+from ..schemas.orchestration import OrchestrationResult, QueryType
 
 _FOLLOWUP_FOCUS: dict[QueryType, str] = {
     QueryType.FOLLOWUP_WHY_NARRATIVE: "narrative",

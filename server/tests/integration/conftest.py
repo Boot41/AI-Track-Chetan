@@ -100,11 +100,18 @@ async def engine():  # type: ignore[no-untyped-def]
         except Exception:
             await conn.rollback()
     async with eng.begin() as conn:
+        from agent.app.persistence.tables import metadata as agent_metadata
+
         await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(agent_metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(agent_metadata.create_all)
     yield eng
     async with eng.begin() as conn:
+        from agent.app.persistence.tables import metadata as agent_metadata
+
         await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(agent_metadata.drop_all)
     await eng.dispose()
 
 

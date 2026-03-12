@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import NAMESPACE_URL, uuid5
 
-from app.schemas.ingestion import DocumentClassification, DocumentType, SectionRecord
+from ..schemas.ingestion import DocumentClassification, DocumentType, SectionRecord
 
 
 class ContractFactExtractor:
