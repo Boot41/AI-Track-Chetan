@@ -98,60 +98,35 @@ def _comparison_state(state: SessionState | None) -> dict[str, object] | None:
 
 
 class OrchestratorAgentServiceClient:
-    """Orchestrator-backed client with deterministic response normalization."""
+    """HTTP client for the standalone Agent Service running on port 8020."""
 
-    def __init__(self) -> None:
-        self._orchestrator: Any | None = None
-
-    def _get_orchestrator(self) -> Any:
-        if self._orchestrator is not None:
-            return self._orchestrator
-        _ensure_repo_root_on_path()
-        from agent.app.agents.orchestrator import AgentOrchestrator
-        from agent.app.persistence.session import get_sessionmaker
-
-        self._orchestrator = AgentOrchestrator(get_sessionmaker())
-        return self._orchestrator
+    def __init__(self, base_url: str = "http://localhost:8020") -> None:
+        self.base_url = base_url
 
     async def evaluate(self, envelope: AgentRequestEnvelope) -> PublicResponseContract:
-        _ensure_repo_root_on_path()
-        from agent.app.formatters import format_public_response
-        from agent.app.schemas.orchestration import (
-            AgentRequest as OrchestratorRequest,
-        )
-        from agent.app.schemas.orchestration import (
-            SessionState as OrchestratorSessionState,
-        )
-        from agent.app.schemas.orchestration import (
-            TrustedRequestContext as OrchestratorTrustedRequestContext,
-        )
+        import httpx
+        from app.schemas.contracts import PublicResponseContract
 
         envelope = AgentRequestEnvelope.model_validate(envelope)
-        orchestrator = self._get_orchestrator()
-        state_payload = _to_orchestrator_session_state(envelope.session_state)
-        orchestrator_state = (
-            OrchestratorSessionState.model_validate(state_payload)
-            if state_payload is not None
-            else None
-        )
-        result = await orchestrator.orchestrate(
-            OrchestratorRequest(
-                message=envelope.message,
-                context=OrchestratorTrustedRequestContext(
-                    user_id=envelope.context.user_id,
-                    session_id=envelope.context.session_id,
-                    chat_message_id=envelope.context.chat_message_id,
-                    evaluation_id=envelope.context.evaluation_id,
-                ),
-                session_state=orchestrator_state,
-            )
-        )
-        formatted = format_public_response(
-            result,
-            previous_scorecard=_previous_scorecard(envelope.session_state),
-            comparison_state=_comparison_state(envelope.session_state),
-        )
-        return PublicResponseContract.model_validate(formatted)
+        
+        # Adapt internal envelope to Agent Service request
+        payload = {
+            "message": envelope.message,
+            "user_id": str(envelope.context.user_id),
+            "session_id": envelope.context.session_id,
+            "context": {
+                "chat_message_id": envelope.context.chat_message_id,
+                "evaluation_id": envelope.context.evaluation_id,
+                "session_state_payload": _to_orchestrator_session_state(envelope.session_state)
+            }
+        }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(f"{self.base_url}/evaluate", json=payload)
+            if response.status_code != 200:
+                raise RuntimeError(f"Agent Service error: {response.text}")
+            
+            return PublicResponseContract.model_validate(response.json())
 
 
 class StubAgentServiceClient:
@@ -164,7 +139,7 @@ class StubAgentServiceClient:
         envelope = AgentRequestEnvelope.model_validate(envelope)
         query_type = envelope.session_state.query_type if envelope.session_state else None
         if query_type is None:
-            raise ValueError("session_state.query_type is required for stubbed agent calls")
+            query_type = QueryType.GENERAL_QUESTION
 
         response = self._load_base_response(query_type)
         return self._adapt_response(query_type, response)

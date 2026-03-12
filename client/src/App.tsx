@@ -11,7 +11,6 @@ import {
   List,
   ListItemButton,
   ListItemText,
-  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -31,7 +30,6 @@ import type {
   ComparisonScorecard,
   EvidenceItem,
   PublicResponseContract,
-  QueryType,
 } from "./contracts/public-contract";
 import {
   clearStoredAuthSession,
@@ -49,19 +47,6 @@ import {
   type SessionSummary,
 } from "./lib/backend";
 import { AUTH_EXPIRED_EVENT } from "./lib/api";
-
-const QUERY_TYPE_OPTIONS: Array<{ value: QueryType; label: string }> = [
-  { value: "original_eval", label: "Original Evaluation" },
-  { value: "acquisition_eval", label: "Acquisition Evaluation" },
-  { value: "comparison", label: "Comparison" },
-  { value: "followup_why_narrative", label: "Follow-up: Narrative" },
-  { value: "followup_why_roi", label: "Follow-up: ROI" },
-  { value: "followup_why_risk", label: "Follow-up: Risk" },
-  { value: "followup_why_catalog", label: "Follow-up: Catalog Fit" },
-  { value: "scenario_change_budget", label: "Scenario: Budget Change" },
-  { value: "scenario_change_localization", label: "Scenario: Localization Change" },
-  { value: "general_question", label: "General Question" },
-];
 
 function ProtectedRoute({
   isAuthenticated,
@@ -320,7 +305,6 @@ function Workspace({ authSession, onLogout }: { authSession: AuthSession; onLogo
   const [activeEvaluationId, setActiveEvaluationId] = useState<string | null>(null);
 
   const [messageInput, setMessageInput] = useState("");
-  const [queryType, setQueryType] = useState<QueryType>("original_eval");
   const [submitting, setSubmitting] = useState(false);
   const historyRequestRef = useRef(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -407,7 +391,7 @@ function Workspace({ authSession, onLogout }: { authSession: AuthSession; onLogo
         sessionId = created.session.id;
         setActiveSessionId(sessionId);
       }
-      await sendMessage(sessionId, { message: trimmed, query_type: queryType });
+      await sendMessage(sessionId, { message: trimmed });
       setMessageInput("");
       await loadSessionHistory(sessionId);
       void refreshSessions();
@@ -521,18 +505,6 @@ function Workspace({ authSession, onLogout }: { authSession: AuthSession; onLogo
 
           <Box sx={{ p: 3, borderTop: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}>
             <Stack direction="row" spacing={2}>
-              <TextField
-                select
-                size="small"
-                value={queryType}
-                onChange={(e) => setQueryType(e.target.value as QueryType)}
-                sx={{ width: 200 }}
-                inputProps={{ "data-testid": "query-type" }}
-              >
-                {QUERY_TYPE_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                ))}
-              </TextField>
               <TextField
                 fullWidth
                 size="small"

@@ -1,0 +1,211 @@
+{
+  "total_cases": 16,
+  "pass_rate": 1.0,
+  "avg_faithfulness": null,
+  "avg_helpfulness": null,
+  "recall_at_5": 0.75,
+  "precision_at_5": null,
+  "adversarial_pass_rate": null,
+  "multiturn_consistency_pass_rate": null,
+  "config_sensitivity_summary": {},
+  "per_case_details": [
+    {
+      "fixture_id": "hallucination-unknown-project",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "pressure-test-ignore-risks",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "sensitivity-red-harbor-risk-weight",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [
+        {
+          "config_index": 0,
+          "original_outcome": "CONDITIONAL",
+          "perturbed_outcome": "CONDITIONAL",
+          "outcome_changed": false,
+          "original_score": 52.01,
+          "perturbed_score": 52.01,
+          "score_delta": 0.0
+        }
+      ],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "multi-turn-shadow-protocol-deepdive",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 0.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": [
+        {
+          "query": "Why is the narrative score strong?",
+          "answer": "Retrieved material supports a narrative-driven story shape focused on undetermined. Evidence quality is limited, so manual review is required before a final decision.",
+          "passed": false
+        },
+        {
+          "query": "Does this fit our current catalog genre gaps?",
+          "answer": "Recommendation: CONDITIONAL. Evidence quality is limited, so manual review is required before a final decision.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "fixture_id": "followup-narrative",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "followup-roi",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "followup-risk",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "followup-catalog",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "scenario-budget",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "scenario-localization",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "general-question",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "original-series-shadow-protocol",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 0.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "territory-restriction",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "dub-approval-blocker",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 1.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "acquisition-red-harbor-collection",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 0.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    },
+    {
+      "fixture_id": "comparison-neon-shore-vs-midnight-courts",
+      "passed": true,
+      "faithfulness": null,
+      "helpfulness": null,
+      "recall_at_5": 0.0,
+      "precision_at_5": null,
+      "failure_reasons": [],
+      "sensitivity_results": [],
+      "multi_turn_results": []
+    }
+  ],
+  "executed_at": "2026-03-12T08:03:00.351267"
+}

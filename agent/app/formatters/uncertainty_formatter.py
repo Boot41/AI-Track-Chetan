@@ -65,13 +65,19 @@ def format_meta(
     warnings = list(dict.fromkeys([*result.warnings, *_structure_confidence_warnings(result)]))
     evidence_avg_confidence, evidence_count = _evidence_confidence(evidence)
     orchestration_confidence = _orchestration_confidence(result)
-    retrieval_grounded_count = (
-        len(result.retrieval_output.raw_candidates)
-        if result.retrieval_output is not None
-        else 0
+    
+    # Check if we have any grounding (either documents or SQL metrics)
+    has_retrieval_grounding = (
+        result.retrieval_output is not None 
+        and len(result.retrieval_output.raw_candidates) > 0
     )
+    has_sql_grounding = (
+        result.roi_output is not None 
+        and any(m.source_table == "structured_metrics" for m in result.roi_output.metrics)
+    )
+    has_any_grounding = has_retrieval_grounding or has_sql_grounding
 
-    if evidence_count == 0 or retrieval_grounded_count == 0:
+    if evidence_count == 0 or not has_any_grounding:
         warnings.append("No supporting evidence was retrieved for this response.")
     elif evidence_avg_confidence < LOW_CONFIDENCE_THRESHOLD:
         warnings.append("Supporting evidence confidence is low.")
@@ -83,7 +89,7 @@ def format_meta(
     )
     review_required = (
         evidence_count == 0
-        or retrieval_grounded_count == 0
+        or not has_any_grounding
         or confidence < REVIEW_REQUIRED_THRESHOLD
         or any("low-structure" in warning for warning in warnings)
     )

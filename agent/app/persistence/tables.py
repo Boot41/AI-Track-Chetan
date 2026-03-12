@@ -72,3 +72,14 @@ document_risks = Table(
     Column("source_text", Text, nullable=False),
     Column("status", String(32), nullable=False),
 )
+
+structured_metrics = Table(
+    "structured_metrics",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("pitch_id", String(128), nullable=False),
+    Column("metric_key", String(128), nullable=False),
+    Column("metric_value", Float, nullable=False),
+    Column("source_table", String(128), nullable=False),
+    Column("source_reference", String(255), nullable=False),
+)

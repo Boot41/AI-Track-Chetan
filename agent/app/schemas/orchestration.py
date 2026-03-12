@@ -161,6 +161,7 @@ class AgentRequest(BaseModel):
     message: str = Field(min_length=1)
     context: TrustedRequestContext
     session_state: SessionState | None = None
+    recommendation_config: RecommendationConfig | None = None
 
 
 class ToolInvocation(BaseModel):

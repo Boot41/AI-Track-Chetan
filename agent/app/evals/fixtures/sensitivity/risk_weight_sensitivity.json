@@ -1,0 +1,16 @@
+{
+  "fixture_id": "sensitivity-red-harbor-risk-weight",
+  "query": "Should we acquire the Red Harbor Collection?",
+  "pitch_id": "pitch_red_harbor",
+  "behavior": "DETERMINISTIC_PASS",
+  "config_perturbations": [
+    {
+      "weights": {
+        "narrative_weight": 0.1,
+        "roi_weight": 0.1,
+        "risk_weight": 0.7,
+        "catalog_fit_weight": 0.1
+      }
+    }
+  ]
+}

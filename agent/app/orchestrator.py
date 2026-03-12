@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from google.adk.agents import Agent
 
 from agent.app.agents.orchestrator import AgentOrchestrator
@@ -42,18 +43,31 @@ async def orchestrate_query(
     user_id: int = 1,
     session_id: str = "session",
     pitch_id: str | None = None,
+    tool_context: Any | None = None,
 ) -> dict[str, object]:
+    # Try to get session state from tool_context if passed by ADK
+    session_state_payload = None
+    if tool_context and hasattr(tool_context, "state"):
+        session_state_payload = tool_context.state.get("session_state_payload")
+    
     resolved_pitch_id = pitch_id or _infer_pitch_id_from_message(message)
     orchestrator = AgentOrchestrator(get_sessionmaker())
+    
+    state = None
+    if session_state_payload:
+        from agent.app.schemas.orchestration import SessionState as OrchestratorSessionState
+        state = OrchestratorSessionState.model_validate(session_state_payload)
+        # Ensure the pitch_id is set if inferred from message
+        if not state.pitch_id and resolved_pitch_id:
+            state.pitch_id = resolved_pitch_id
+    elif resolved_pitch_id is not None:
+        state = SessionState(pitch_id=resolved_pitch_id)
+
     result = await orchestrator.orchestrate(
         AgentRequest(
             message=message,
             context=TrustedRequestContext(user_id=user_id, session_id=session_id),
-            session_state=(
-                SessionState(pitch_id=resolved_pitch_id)
-                if resolved_pitch_id is not None
-                else None
-            ),
+            session_state=state,
         )
     )
     return format_public_response(result)
@@ -62,11 +76,24 @@ async def orchestrate_query(
 def classify_query_for_delegation(
     message: str,
     pitch_id: str | None = None,
+    tool_context: Any | None = None,
 ) -> dict[str, object]:
+    # Try to get session state from tool_context
+    session_state_payload = None
+    if tool_context and hasattr(tool_context, "state"):
+        session_state_payload = tool_context.state.get("session_state_payload")
+    
+    state = None
+    if session_state_payload:
+        from agent.app.schemas.orchestration import SessionState as OrchestratorSessionState
+        state = OrchestratorSessionState.model_validate(session_state_payload)
+
     classifier = QueryClassifier()
-    classification = classifier.classify(message)
+    classification = classifier.classify(message, state)
     route = ROUTING_MATRIX[classification.query_type]
-    resolved_pitch_id = pitch_id or _infer_pitch_id_from_message(message)
+    
+    resolved_pitch_id = pitch_id or (state.pitch_id if state else None) or _infer_pitch_id_from_message(message)
+    
     target_to_subagent = {
         AgentTarget.DOCUMENT_RETRIEVAL: "document_retrieval_agent",
         AgentTarget.NARRATIVE_ANALYSIS: "narrative_analysis_agent",
@@ -166,7 +193,7 @@ async def sql_retrieval(
     resolved_pitch_id = pitch_id or (
         _infer_pitch_id_from_message(message_hint) if message_hint else None
     )
-    tool = SqlRetrievalTool()
+    tool = SqlRetrievalTool(get_sessionmaker())
     requested_keys = metric_keys or [
         "baseline_completion_rate",
         "comparable_completion_rate",
@@ -361,10 +388,15 @@ root_agent = Agent(
     model="gemini-2.5-flash",
     description="Orchestration shell for StreamLogic AI.",
     instruction=(
-        "Always call `classify_query_for_delegation` first. Transfer only to subagents listed in "
-        "`recommended_subagents`, at most once each, and do not transfer to any other specialist. "
-        "After specialist handoffs, call `orchestrate_query` directly to produce the final output. "
-        "Do not answer directly and do not fabricate recommendation outputs."
+        "You are the main orchestrator for StreamLogic AI. Your goal is to provide high-quality, "
+        "evidence-backed decision support for OTT content investments.\n\n"
+        "1. Always call `classify_query_for_delegation` first to understand the request and get subagent recommendations.\n"
+        "2. Transfer to the recommended subagents to gather specific analysis (Narrative, ROI, Risk, etc.).\n"
+        "3. Finally, call `orchestrate_query`. This tool provides the official structured scorecard, "
+        "evidence items, and deterministic metrics required for the platform's stability.\n"
+        "4. Use the information from the subagents and the `orchestrate_query` output to synthesize a "
+        "thoughtful, professional, and nuanced final response to the user. Do not just repeat the tool's "
+        "summary; provide your own analyst-level perspective on the subtext, nuances, and risks."
     ),
     tools=[classify_query_for_delegation, orchestrate_query],
     sub_agents=[

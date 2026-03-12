@@ -156,14 +156,14 @@ async def create_message_and_evaluation(
     request_id: str,
 ) -> PublicResponseContract:
     session = await _get_owned_session(db, user.id, session_id)
-    classification = ROUTING_SPEC[body.query_type]
+    classification = ROUTING_SPEC[body.query_type] if body.query_type is not None else None
 
     user_message = ChatMessage(
         session_id=session.id,
         role="user",
         message_text=body.message,
-        query_type=body.query_type.value,
-        classification=classification.model_dump(mode="json"),
+        query_type=body.query_type.value if body.query_type is not None else None,
+        classification=classification.model_dump(mode="json") if classification is not None else None,
     )
     db.add(user_message)
     session.updated_at = datetime.now(UTC).replace(tzinfo=None)
@@ -309,14 +309,14 @@ def _build_session_state(session: ChatSession, body: ChatMessageCreateRequest) -
         if session.session_state
         else SessionState()
     )
-    history = [*previous_state.conversation_intent_history, body.query_type]
-    return previous_state.model_copy(
-        update={
-            "pitch_id": body.pitch_id or previous_state.pitch_id,
-            "query_type": body.query_type,
-            "conversation_intent_history": history,
-        }
-    )
+    update: dict[str, object] = {"pitch_id": body.pitch_id or previous_state.pitch_id}
+    if body.query_type is not None:
+        update["query_type"] = body.query_type
+        update["conversation_intent_history"] = [
+            *previous_state.conversation_intent_history,
+            body.query_type,
+        ]
+    return previous_state.model_copy(update=update)
 
 
 def _merge_session_state(

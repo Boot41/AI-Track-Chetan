@@ -90,7 +90,7 @@ class AgentOrchestrator:
             provenance_tool,
         )
         self._roi_agent = roi_agent or RoiPredictionAgent(
-            SqlRetrievalTool(), provenance_tool
+            SqlRetrievalTool(session_factory), provenance_tool
         )
         self._risk_agent = risk_agent or RiskContractAnalysisAgent(
             ClauseExtractionTool(session_factory),
@@ -115,6 +115,9 @@ class AgentOrchestrator:
 
         request = normalized_request
         session_state = request.session_state or SessionState()
+        recommendation_config = (
+            request.recommendation_config or self._recommendation_engine.config
+        )
         index_state = await self._operational_workflow.corpus_index_state()
         session_state, cache_invalidation_warnings = self._invalidate_stale_cache(
             session_state,
@@ -140,7 +143,7 @@ class AgentOrchestrator:
             comparison_option_ids=[
                 option.option_id for option in context.comparison_options
             ],
-            recommendation_config=self._recommendation_engine.config,
+            recommendation_config=recommendation_config,
             index_fingerprint=index_state.fingerprint,
         )
         result.warnings.extend(cache_invalidation_warnings)

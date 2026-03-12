@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/contracts/public-contract.ts","./src/lib/api.ts","./src/lib/backend.ts","./src/lib/fixtures.ts","./src/test/setup.ts"],"version":"5.9.3"}

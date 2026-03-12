@@ -41,6 +41,8 @@ def _title_for(query_type: QueryType) -> str:
         return "Follow-Up Analysis"
     if query_type == QueryType.ACQUISITION_EVAL:
         return "Catalog Acquisition Evaluation"
+    if query_type == QueryType.GENERAL_QUESTION:
+        return "General Information Request"
     return "Original Content Evaluation"
 
 

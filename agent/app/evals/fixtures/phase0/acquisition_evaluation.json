@@ -1,36 +1,20 @@
 {
-  "fixture_id": "acquisition-midnight-courts",
-  "query": "Should we acquire the Midnight Courts library for Southeast Asia?",
-  "request_context": {
-    "content_id": "catalog-midnight-courts",
-    "content_type": "catalog_acquisition"
-  },
-  "expected_classification": {
-    "query_type": "acquisition_eval",
-    "target_agents": [
-      "risk_contract_analysis",
-      "catalog_fit",
-      "roi_prediction",
-      "recommendation_engine"
-    ],
-    "reuse_cached_outputs": false,
-    "requires_recomputation": true
-  },
-  "expected_response_shape": {
-    "answer": "string",
-    "scorecard_type": "evaluation",
-    "required_scorecard_fields": [
-      "title",
-      "recommendation",
-      "estimated_roi",
-      "catalog_fit_score",
-      "risk_level",
-      "risk_flags"
-    ],
-    "meta_fields": [
-      "warnings",
-      "confidence",
-      "review_required"
-    ]
-  }
+  "fixture_id": "acquisition-red-harbor-collection",
+  "query": "Should we acquire the Red Harbor Collection?",
+  "pitch_id": "pitch_red_harbor",
+  "behavior": "DETERMINISTIC_PASS",
+  "golden_answer": "The Red Harbor Collection should be approached with caution due to matching rights and exclusivity overlap risks.",
+  "expected_key_risks": [
+    "matching_rights_constraint",
+    "exclusivity_window_overlap"
+  ],
+  "expected_roi_facts": [
+    "licensing_cost",
+    "viewership_projection"
+  ],
+  "required_evidence": [
+    {
+      "source_reference": "Red Harbor Licensing Agreement"
+    }
+  ]
 }

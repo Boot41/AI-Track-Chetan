@@ -1,6 +1,8 @@
 [
   {
     "fixture_id": "territory-restriction",
+    "query": "Are there any territory restrictions for Midnight Courts?",
+    "pitch_id": "pitch_midnight_courts",
     "document_id": "doc-midnight-courts-license",
     "section_id": "sec-12-territory",
     "clause_text": "Distributor rights are limited to Indonesia, Thailand, and the Philippines. Any exploitation outside those territories requires separate approval.",
@@ -25,6 +27,8 @@
   },
   {
     "fixture_id": "dub-approval-blocker",
+    "query": "Do we need approval for dubbing Midnight Courts?",
+    "pitch_id": "pitch_midnight_courts",
     "document_id": "doc-midnight-courts-license",
     "section_id": "sec-19-localization",
     "clause_text": "No dubbing, edits, or localized derivative works may be created without prior written approval from the licensor.",

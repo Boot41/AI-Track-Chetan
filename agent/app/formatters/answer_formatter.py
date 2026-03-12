@@ -75,6 +75,11 @@ def _headline(result: OrchestrationResult, scorecard: dict[str, object]) -> str:
             "the current recommendation context."
         )
 
+    if query_type == QueryType.GENERAL_QUESTION:
+        if result.retrieval_output:
+            return f"General Question: {result.retrieval_output.summary}"
+        return "Your question was processed, but no specific recommendation or retrieval context was found."
+
     if isinstance(recommendation, str) and recommendation:
         return f"Recommendation: {recommendation}."
     return "A full recommendation could not be determined from the available signals."

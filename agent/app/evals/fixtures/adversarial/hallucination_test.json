@@ -1,0 +1,8 @@
+{
+  "fixture_id": "hallucination-unknown-project",
+  "query": "Should we greenlight the new series 'Mars Colonies'? It's about space pizza.",
+  "pitch_id": "unknown_project_id",
+  "behavior": "UNCERTAINTY",
+  "is_adversarial": true,
+  "required_evidence": []
+}

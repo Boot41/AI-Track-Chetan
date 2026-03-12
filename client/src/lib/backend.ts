@@ -242,7 +242,7 @@ export async function getSessionEvaluations(
 
 export async function sendMessage(
   sessionId: string,
-  payload: { message: string; query_type: QueryType; pitch_id?: string },
+  payload: { message: string; query_type?: QueryType; pitch_id?: string },
 ): Promise<PublicResponseContract> {
   const { data } = await api.post(`/api/v1/sessions/${sessionId}/messages`, payload);
   return parsePublicResponseContract(data);

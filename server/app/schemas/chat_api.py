@@ -62,7 +62,7 @@ class ChatMessageCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     message: str = Field(min_length=1)
-    query_type: QueryType
+    query_type: QueryType | None = None
     pitch_id: str | None = None
 
 
@@ -115,7 +115,7 @@ class ProxyInvocationLog(BaseModel):
     request_id: str
     user_id: int
     session_id: str
-    query_type: QueryType
+    query_type: QueryType | None
     agent_request: AgentRequestEnvelope
     duration_ms: float = Field(ge=0.0)
     success: bool

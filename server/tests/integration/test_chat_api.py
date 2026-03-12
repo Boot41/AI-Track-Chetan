@@ -126,7 +126,7 @@ async def test_comparison_session_persists_comparison_shape(
 
 
 @pytest.mark.asyncio
-async def test_invalid_chat_request_is_rejected(
+async def test_message_without_query_type_is_accepted(
     client: AsyncClient,
     auth_headers: dict[str, str],
 ) -> None:
@@ -142,7 +142,7 @@ async def test_invalid_chat_request_is_rejected(
         json={"message": "Missing query type"},
         headers=auth_headers,
     )
-    assert response.status_code == 422
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio

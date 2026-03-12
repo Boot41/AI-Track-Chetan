@@ -1,37 +1,20 @@
 {
-  "fixture_id": "original-series-neon-shore",
-  "query": "Should we greenlight Neon Shore as an original series?",
-  "request_context": {
-    "content_id": "pitch-neon-shore",
-    "content_type": "original_series"
-  },
-  "expected_classification": {
-    "query_type": "original_eval",
-    "target_agents": [
-      "narrative_analysis",
-      "roi_prediction",
-      "risk_contract_analysis",
-      "catalog_fit",
-      "recommendation_engine"
-    ],
-    "reuse_cached_outputs": false,
-    "requires_recomputation": true
-  },
-  "expected_response_shape": {
-    "answer": "string",
-    "scorecard_type": "evaluation",
-    "required_scorecard_fields": [
-      "title",
-      "recommendation",
-      "projected_completion_rate",
-      "estimated_roi",
-      "catalog_fit_score",
-      "risk_flags"
-    ],
-    "meta_fields": [
-      "warnings",
-      "confidence",
-      "review_required"
-    ]
-  }
+  "fixture_id": "original-series-shadow-protocol",
+  "query": "Should we greenlight Shadow Protocol as an original series?",
+  "pitch_id": "pitch_shadow_protocol",
+  "behavior": "DETERMINISTIC_PASS",
+  "golden_answer": "Shadow Protocol is a strong candidate for greenlighting due to high hook strength and solid ROI projections.",
+  "expected_key_risks": [],
+  "expected_roi_facts": [
+    "baseline_completion_rate",
+    "projected_viewers"
+  ],
+  "required_evidence": [
+    {
+      "source_reference": "Shadow Protocol Pilot Script"
+    },
+    {
+      "source_reference": "Shadow Protocol Pitch Deck"
+    }
+  ]
 }

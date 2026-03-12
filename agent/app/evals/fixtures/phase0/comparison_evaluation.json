@@ -1,41 +1,28 @@
 {
   "fixture_id": "comparison-neon-shore-vs-midnight-courts",
   "query": "Which is the better investment this quarter: greenlighting Neon Shore or acquiring Midnight Courts?",
+  "behavior": "DETERMINISTIC_PASS",
+  "pitch_id": "pitch_neon_shore",
   "request_context": {
     "option_ids": [
       "pitch-neon-shore",
       "catalog-midnight-courts"
     ]
   },
-  "expected_classification": {
-    "query_type": "comparison",
-    "target_agents": [
-      "narrative_analysis",
-      "roi_prediction",
-      "risk_contract_analysis",
-      "catalog_fit",
-      "comparison_synthesis"
-    ],
-    "reuse_cached_outputs": false,
-    "requires_recomputation": true
-  },
-  "expected_response_shape": {
-    "answer": "string",
-    "scorecard_type": "comparison",
-    "required_scorecard_fields": [
-      "title",
-      "comparison"
-    ],
-    "required_comparison_fields": [
-      "options",
-      "winning_option_id",
-      "comparison_axes",
-      "summary"
-    ],
-    "meta_fields": [
-      "warnings",
-      "confidence",
-      "review_required"
-    ]
-  }
+  "golden_answer": "Neon Shore offers higher original series potential but Midnight Courts provides immediate catalog depth with lower production risk.",
+  "expected_key_risks": [
+    "licensing_dependency"
+  ],
+  "expected_roi_facts": [
+    "estimated_roi",
+    "total_cost"
+  ],
+  "required_evidence": [
+    {
+      "source_reference": "Neon Shore Pitch Deck"
+    },
+    {
+      "source_reference": "Midnight Courts Licensing Summary"
+    }
+  ]
 }

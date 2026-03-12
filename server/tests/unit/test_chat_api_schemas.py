@@ -16,13 +16,9 @@ def test_session_create_request_forbids_unknown_fields() -> None:
         raise AssertionError("SessionCreateRequest accepted an unknown field")
 
 
-def test_chat_message_request_requires_query_type() -> None:
-    try:
-        ChatMessageCreateRequest.model_validate({"message": "Evaluate this"})
-    except ValidationError as exc:
-        assert "query_type" in str(exc)
-    else:
-        raise AssertionError("ChatMessageCreateRequest accepted a missing query_type")
+def test_chat_message_request_allows_missing_query_type() -> None:
+    payload = ChatMessageCreateRequest.model_validate({"message": "Evaluate this"})
+    assert payload.query_type is None
 
 
 async def test_stub_agent_client_adapts_comparison_fixture() -> None:

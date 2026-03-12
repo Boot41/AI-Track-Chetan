@@ -61,6 +61,7 @@ class QueryClassifier:
             return QueryType.SCENARIO_CHANGE_LOCALIZATION
         if self._looks_like_followup(message):
             return self._followup_type(message, session_state)
+        
         original_signals = ("greenlight", "original", "series", "pilot", "show bible")
         acquisition_signals = (
             "acquire",
@@ -82,27 +83,35 @@ class QueryClassifier:
             "prequel",
             "collection",
         )
-        acquisition_subject_signals = (
-            "red harbor",
-            "catalog",
-            "collection",
-            "global roi",
-            "roi model",
-        )
-        has_original_signal = any(token in message for token in original_signals)
-        has_acquisition_signal = any(token in message for token in acquisition_signals)
-        has_acquisition_subject = any(
-            token in message for token in acquisition_subject_signals
-        )
+        
+        has_original_keyword = any(token in message for token in original_signals)
+        has_acquisition_keyword = any(token in message for token in acquisition_signals)
+        
+        is_shadow_protocol = "shadow protocol" in message
+        is_red_harbor = "red harbor" in message
+        
+        # Expanded evaluation indicators
+        is_evaluation_request = any(
+            token in message 
+            for token in ("evaluation", "eval ", "roi", "return", "performance", "financial", "viability")
+        ) or message.endswith("eval")
 
-        if has_original_signal:
+        if is_shadow_protocol:
+            if is_evaluation_request or has_original_keyword:
+                return QueryType.ORIGINAL_EVAL
+        
+        if is_red_harbor:
+            if is_evaluation_request or has_acquisition_keyword:
+                return QueryType.ACQUISITION_EVAL
+
+        if has_original_keyword:
             return QueryType.ORIGINAL_EVAL
         if (
-            has_acquisition_signal
-            or has_acquisition_subject
-            or ("catalog" in message and not has_original_signal)
+            has_acquisition_keyword
+            or ("catalog" in message and not has_original_keyword)
         ):
             return QueryType.ACQUISITION_EVAL
+            
         return QueryType.GENERAL_QUESTION
 
     def _followup_type(
@@ -187,6 +196,10 @@ class QueryClassifier:
             "tone",
             "pacing",
             "pilot script",
+            "subtext",
+            "dialogue",
+            "scene",
+            "character depth",
         )
         return any(verb in message for verb in prompt_verbs) and any(
             target in message for target in narrative_targets

@@ -1,0 +1,14 @@
+{
+  "fixture_id": "multi-turn-shadow-protocol-deepdive",
+  "query": "Should we greenlight Shadow Protocol?",
+  "pitch_id": "pitch_shadow_protocol",
+  "behavior": "DETERMINISTIC_PASS",
+  "multi_turn_sequence": [
+    "Why is the narrative score strong?",
+    "Does this fit our current catalog genre gaps?"
+  ],
+  "required_evidence": [
+    {"source_reference": "Shadow Protocol Pilot Script"},
+    {"source_reference": "Shadow Protocol Pitch Deck"}
+  ]
+}
