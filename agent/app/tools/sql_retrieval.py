@@ -30,7 +30,7 @@ class SqlRetrievalTool:
         
         # Normalize pitch_id if it's not a standard ID
         if pitch_id and not pitch_id.startswith("pitch_"):
-            from app.orchestrator import _infer_pitch_id_from_message
+            from app.agent import _infer_pitch_id_from_message
             normalized = _infer_pitch_id_from_message(pitch_id)
             if normalized:
                 pitch_id = normalized
